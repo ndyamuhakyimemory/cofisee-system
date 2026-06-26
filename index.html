@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>COFISEE Microfinance System</title>
+    <style>
+        body { font-family: Arial; margin: 20px; background:#f4f4f4; }
+        h2 { color: #2c3e50; }
+        .box { background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+        input, button { padding: 10px; margin: 5px; width: 200px; }
+        button { cursor: pointer; background: green; color: white; border: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    </style>
+</head>
+
+<body>
+
+<h2>COFISEE MICROFINANCE SYSTEM</h2>
+
+<div class="box">
+    <h3>Add Customer</h3>
+    <input id="name" placeholder="Customer Name">
+    <input id="phone" placeholder="Phone Number">
+    <button onclick="addCustomer()">Add Customer</button>
+</div>
+
+<div class="box">
+    <h3>Give Loan / Save Money</h3>
+    <input id="customerName" placeholder="Customer Name">
+    <input id="amount" placeholder="Amount">
+    <button onclick="giveLoan()">Give Loan</button>
+    <button onclick="addSavings()">Add Savings</button>
+</div>
+
+<div class="box">
+    <h3>Customer Records</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Total Loan</th>
+                <th>Total Savings</th>
+                <th>Balance</th>
+            </tr>
+        </thead>
+        <tbody id="dataTable"></tbody>
+    </table>
+</div>
+
+<script>
+let customers = JSON.parse(localStorage.getItem("customers")) || [];
+
+function saveData() {
+    localStorage.setItem("customers", JSON.stringify(customers));
+    render();
+}
+
+function addCustomer() {
+    let name = document.getElementById("name").value;
+    let phone = document.getElementById("phone").value;
+
+    customers.push({
+        name: name,
+        phone: phone,
+        loan: 0,
+        savings: 0
+    });
+
+    saveData();
+    alert("Customer added!");
+}
+
+function giveLoan() {
+    let name = document.getElementById("customerName").value;
+    let amount = Number(document.getElementById("amount").value);
+
+    let c = customers.find(x => x.name === name);
+    if (c) {
+        c.loan += amount;
+        saveData();
+        alert("Loan recorded!");
+    } else {
+        alert("Customer not found!");
+    }
+}
+
+function addSavings() {
+    let name = document.getElementById("customerName").value;
+    let amount = Number(document.getElementById("amount").value);
+
+    let c = customers.find(x => x.name === name);
+    if (c) {
+        c.savings += amount;
+        saveData();
+        alert("Savings recorded!");
+    } else {
+        alert("Customer not found!");
+    }
+}
+
+function render() {
+    let table = document.getElementById("dataTable");
+    table.innerHTML = "";
+
+    customers.forEach(c => {
+        let balance = c.savings - c.loan;
+
+        table.innerHTML += `
+            <tr>
+                <td>${c.name}</td>
+                <td>${c.phone}</td>
+                <td>${c.loan}</td>
+                <td>${c.savings}</td>
+                <td>${balance}</td>
+            </tr>
+        `;
+    });
+}
+
+render();
+</script>
+
+</body>
+</html>
