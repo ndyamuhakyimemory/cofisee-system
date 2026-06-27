@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COFISEE Dashboard</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<header>
+    <h1>COFISEE MICROFINANCE</h1>
+    <p>Management Information System Dashboard</p>
+</header>
+
+<!-- NAVIGATION -->
+<nav>
+    <a href="index.html">Home</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="members.html">Members</a>
+    <a href="loans.html">Loans</a>
+    <a href="repayments.html">Repayments</a>
+    <a href="savings.html">Savings</a>
+    <a href="reports.html">Reports</a>
+</nav>
+
+<div class="container">
+
+<!-- STATISTICS CARDS -->
+<div class="dashboard">
+
+    <div class="dashboard-card">
+        <h3>Total Members</h3>
+        <p>70</p>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Active Loans</h3>
+        <p>45</p>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Total Savings</h3>
+        <p>UGX 12,500,000</p>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Outstanding Balance</h3>
+        <p>UGX 8,200,000</p>
+    </div>
+
+</div>
+
+<!-- CHART 1 -->
+<div class="card">
+    <h2>Loan Disbursement Trend</h2>
+    <canvas id="loanChart"></canvas>
+</div>
+
+<!-- CHART 2 -->
+<div class="card">
+    <h2>Savings Growth Trend</h2>
+    <canvas id="savingsChart"></canvas>
+</div>
+
+</div>
+
+<footer>
+    <p>© 2026 COFISEE Microfinance System</p>
+</footer>
+
+<script>
+// LOAN CHART
+new Chart(document.getElementById('loanChart'), {
+    type: 'bar',
+    data: {
+        labels: ['Jan','Feb','Mar','Apr','May','Jun'],
+        datasets: [{
+            label: 'Loans (UGX)',
+            data: [1000000,1500000,2000000,1800000,2200000,2500000],
+            backgroundColor: '#006400'
+        }]
+    }
+});
+
+// SAVINGS CHART
+new Chart(document.getElementById('savingsChart'), {
+    type: 'line',
+    data: {
+        labels: ['Jan','Feb','Mar','Apr','May','Jun'],
+        datasets: [{
+            label: 'Savings (UGX)',
+            data: [500000,900000,1200000,1600000,2000000,2600000],
+            borderColor: '#006400',
+            fill: false,
+            tension: 0.3
+        }]
+    }
+});
+</script>
+
+</body>
+</html>
