@@ -2,7 +2,30 @@
 session_start();
 include "php/db.php";
 
-// Only process POST requests
+// If requested with GET, show a minimal form so visiting the URL doesn't return 405.
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // A simple debug-friendly form — this does not replace your main loan page.
+    echo '<!doctype html><html><head><meta charset="utf-8"><title>Submit Loan (debug)</title></head><body>';
+    echo '<h1>Submit Loan (debug form)</h1>';
+    if (!empty($_SESSION["error"])) {
+        echo '<div style="color:red;">' . htmlspecialchars($_SESSION["error"]) . '</div>';
+        unset($_SESSION["error"]);
+    }
+    if (!empty($_SESSION["success"])) {
+        echo '<div style="color:green;">' . htmlspecialchars($_SESSION["success"]) . '</div>';
+        unset($_SESSION["success"]);
+    }
+    echo '<form method="post" action="add_loan.php">';
+    echo '<label>Member ID: <input type="number" name="member_id" required></label><br><br>';
+    echo '<label>Amount: <input name="amount" type="number" step="0.01" required></label><br><br>';
+    echo '<label>Interest rate: <input name="interest_rate" type="number" step="0.01" required></label><br><br>';
+    echo '<button type="submit">Submit loan</button>';
+    echo '</form>';
+    echo '</body></html>';
+    exit();
+}
+
+// Only process POST requests for the insert logic
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     exit("Method Not Allowed");
@@ -32,12 +55,17 @@ if ($interest_rate < 0 || $interest_rate > 100) {
 // Verify member exists
 if (empty($errors)) {
     $memberStmt = $conn->prepare("SELECT id FROM members WHERE id = ?");
-    $memberStmt->bind_param("i", $member_id);
-    $memberStmt->execute();
-    if ($memberStmt->get_result()->num_rows === 0) {
-        $errors[] = "Member does not exist";
+    if ($memberStmt) {
+        $memberStmt->bind_param("i", $member_id);
+        $memberStmt->execute();
+        $res = $memberStmt->get_result();
+        if (!$res || $res->num_rows === 0) {
+            $errors[] = "Member does not exist";
+        }
+        $memberStmt->close();
+    } else {
+        $errors[] = "Database error when verifying member";
     }
-    $memberStmt->close();
 }
 
 if (!empty($errors)) {
@@ -52,15 +80,19 @@ if (!empty($errors)) {
         if ($stmt->execute()) {
             $_SESSION['success'] = "Loan disbursed successfully!";
         } else {
+            // Capture DB error for debugging but don't expose raw SQL errors to users in production
             $_SESSION['error'] = "Error disbursing loan. Please try again.";
+            error_log('add_loan.php execute error: ' . $stmt->error);
         }
         
         $stmt->close();
     } else {
         $_SESSION['error'] = "Database error. Please try again.";
+        error_log('add_loan.php prepare error: ' . $conn->error);
     }
 }
 
-header("Location: loans.html");
+// Redirect back to the loan page. The repository has loan.html, so redirect there.
+header("Location: loan.html");
 exit();
 ?>
