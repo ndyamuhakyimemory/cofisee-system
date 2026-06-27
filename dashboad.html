@@ -55,6 +55,22 @@
         <p>UGX 8,200,000</p>
     </div>
 
+    <!-- NEW CARDS -->
+    <div class="dashboard-card">
+        <h3>Expenses</h3>
+        <p>UGX 1,150,000</p>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Interest Amount</h3>
+        <p>UGX 420,000</p>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Available Balance</h3>
+        <p>UGX 3,430,000</p>
+    </div>
+
 </div>
 
 <!-- CHART 1 -->
@@ -67,6 +83,12 @@
 <div class="card">
     <h2>Savings Growth Trend</h2>
     <canvas id="savingsChart"></canvas>
+</div>
+
+<!-- NEW: DAILY REPAYMENTS -->
+<div class="card">
+    <h2>Daily Repayments</h2>
+    <canvas id="dailyRepaymentsChart"></canvas>
 </div>
 
 </div>
@@ -101,6 +123,27 @@ new Chart(document.getElementById('savingsChart'), {
             fill: false,
             tension: 0.3
         }]
+    }
+});
+
+// DAILY REPAYMENTS CHART
+new Chart(document.getElementById('dailyRepaymentsChart'), {
+    type: 'bar',
+    data: {
+        // Example: last 7 days
+        labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+        datasets: [{
+            label: 'Repayments (UGX)',
+            data: [250000,180000,300000,220000,270000,310000,190000],
+            backgroundColor: '#2E8B57'
+        }]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
     }
 });
 </script>
