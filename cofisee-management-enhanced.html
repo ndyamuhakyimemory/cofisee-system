@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>COFISEE Microfinance — Members, Loans & Repayments</title>
+<style>
+:root{--navy:#12304a;--blue:#1769aa;--green:#16834a;--bg:#f3f6fa;--line:#dce4ec;--green:#137a45;--red:#b42318;--amber:#946200}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#1d2939}
+header{background:#16834a;color:white;padding:18px 16px}header h1{margin:0 0 5px;font-size:22px}header p{margin:0;color:#d7e6f2;font-size:13px}
+main{max-width:1200px;margin:18px auto;padding:0 12px}.notice{background:#fff7e6;border:1px solid #f0d58a;padding:12px;border-radius:8px;margin-bottom:14px;font-size:13px;line-height:1.45}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.tab{border:1px solid var(--line);background:white;padding:10px 15px;border-radius:7px;font-weight:bold;color:var(--navy);cursor:pointer}.tab.active{background:var(--blue);color:white;border-color:var(--blue)}
+.panel{display:none}.panel.active{display:block}.card{background:white;border:1px solid var(--line);border-radius:10px;padding:15px;margin-bottom:14px;box-shadow:0 1px 3px #1525360b}
+h2{font-size:18px;margin:0 0 13px;color:var(--navy)}h3{font-size:15px;margin:0 0 12px;color:var(--navy)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px}.field label{display:block;font-size:12px;font-weight:bold;margin-bottom:5px;color:#475467}
+input,select{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;background:white;min-width:0}
+input[readonly]{background:#f1f5f9;color:#344054}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button{border:0;border-radius:6px;padding:10px 14px;background:var(--blue);color:white;font-weight:bold;cursor:pointer}button.secondary{background:#e8eef5;color:var(--navy)}button.danger{background:#b42318}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.stat{background:white;border:1px solid var(--line);border-radius:9px;padding:12px}.stat small{display:block;color:#667085}.stat strong{font-size:20px;color:var(--navy)}
+.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}th,td{padding:10px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{background:#f8fafc;color:#344054}
+.status{font-weight:bold;padding:4px 7px;border-radius:5px;display:inline-block}.status.default{background:#fee4e2;color:var(--red)}.status.cleared{background:#dcfae6;color:var(--green)}.status.pending{background:#fff1cc;color:var(--amber)}.status.active{background:#e6f1ff;color:#175cd3}
+.search{max-width:300px;margin:0 0 10px}.muted{color:#667085;font-size:12px}.empty{text-align:center;color:#667085;padding:18px}
+@media(max-width:760px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:420px){.grid{grid-template-columns:1fr}.tabs .tab{flex:1}}
+</style>
+</head>
+<body>
+<header><h1>COFISEE MICROFINANCE</h1><p>Member Register • Loan Register • Repayment Register</p></header>
+<main>
+<div class="notice"><strong>Important:</strong> This version saves records in this browser on this device. It is a working offline/local version, not yet a shared online database. Do not use it as the only copy of real member National ID data. To share records across phones and computers, it must be connected to a secure online database.</div>
+<div class="notice"><b>SMS reminder setup:</b> overdue SMS delivery to 0727204632 is not activated in this standalone file. Automatic SMS requires a connected SMS gateway/provider, account credentials, and a secure server-side function. The phone number alone cannot send SMS from a web page.</div>
+<div class="stats">
+ <div class="stat"><small>Registered members</small><strong id="memberCount">0</strong></div>
+ <div class="stat"><small>Total loans issued</small><strong id="loanCount">0</strong></div>
+ <div class="stat"><small>Outstanding balance</small><strong id="outstandingTotal">UGX 0</strong></div>
+ <div class="stat"><small>Defaulted loans</small><strong id="defaultCount">0</strong></div>
+</div>
+<div class="tabs">
+ <button class="tab active" data-tab="dashboard">Dashboard</button><button class="tab" data-tab="members">Members</button><button class="tab" data-tab="loans">Loans</button><button class="tab" data-tab="repayments">Repayments</button><button class="tab" data-tab="reports">Monthly Report</button><button class="tab" data-tab="expenses">Expenses</button><button class="tab" data-tab="savings">Savings</button><button class="tab" data-tab="guarantors">Guarantors</button><button class="tab" data-tab="loanportal">Loan Search</button>
+</div>
+<section class="panel active" id="dashboard"><div class="card"><h2>COFISEE Dashboard — Namulanda Branch</h2><div class="stats"><div class="stat"><small>Interest earned on loans</small><strong id="dashInterest">UGX 0</strong></div><div class="stat"><small>Expenses recorded</small><strong id="dashExpenses">UGX 0</strong></div><div class="stat"><small>Savings net balance</small><strong id="dashSavings">UGX 0</strong></div><div class="stat"><small>Branch</small><strong>Namulanda</strong></div></div><h3>Member growth</h3><canvas id="memberChart" height="120" style="width:100%;max-height:240px"></canvas><h3>Loans issued by month</h3><canvas id="loanChart" height="120" style="width:100%;max-height:240px"></canvas></div></section>
+
+<section class="panel" id="members">
+ <div class="card">
+  <h2>Register / Edit Member</h2>
+  <form id="memberForm">
+   <div class="grid">
+    <div class="field"><label>Member name *</label><input id="memberName" required placeholder="Full name"></div>
+    <div class="field"><label>Phone number *</label><input id="memberPhone" required type="tel" placeholder="07XXXXXXXX"></div>
+    <div class="field"><label>National ID number *</label><input id="memberNin" required placeholder="National ID number"></div>
+    <div class="field"><label>Register date *</label><input id="memberDate" required type="date"></div><div class="field"><label>Branch</label><input id="memberBranch" value="Namulanda" readonly></div>
+    <div class="field"><label>Member ID (automatic)</label><input id="memberId" readonly placeholder="Generated when saved"></div>
+    <div class="field"><label>Member category</label><input id="memberCategory" readonly placeholder="New / Old"></div>
+   </div>
+   <div class="actions"><button type="submit">Save Member</button><button type="button" class="secondary" id="clearMember">Clear form</button></div>
+   <p class="muted">New = registered in the current calendar month. Old = registered before the current month. The category updates when the date changes.</p>
+  </form>
+ </div>
+ <div class="card"><h2>Members Register</h2><input class="search" id="memberSearch" placeholder="Search name, phone, NIN or member ID"><div class="table-wrap"><table><thead><tr><th>Member ID</th><th>Name</th><th>Phone</th><th>National ID</th><th>Register date</th><th>Category</th><th>Actions</th></tr></thead><tbody id="memberRows"></tbody></table></div></div>
+</section>
+
+<section class="panel" id="loans">
+ <div class="card">
+  <h2>Issue / Edit Loan</h2>
+  <form id="loanForm">
+   <div class="grid">
+    <div class="field"><label>Member name *</label><input id="loanMember" list="memberOptions" required placeholder="Choose registered member"><datalist id="memberOptions"></datalist></div>
+    <div class="field"><label>Member ID</label><input id="loanMemberId" readonly></div>
+    <div class="field"><label>Loan amount (UGX) *</label><input id="loanAmount" type="number" min="1" step="1" required placeholder="Amount issued"></div>
+    <div class="field"><label>Issue date *</label><input id="issueDate" type="date" required></div>
+    <div class="field"><label>Loan term *</label><select id="loanTerm" required><option value="">Select term</option><option value="7">Weekly — 7 days</option><option value="28">Monthly — 28 days</option><option value="28">Daily repayment — 28-day loan</option><option value="56">2 months — 56 days</option><option value="84">3 months — 84 days</option></select></div>
+    <div class="field"><label>Interest (20%)</label><input id="loanInterest" readonly></div>
+    <div class="field"><label>Total payable</label><input id="loanTotal" readonly></div>
+    <div class="field"><label>Due date (automatic)</label><input id="dueDate" readonly></div>
+   </div>
+   <div class="actions"><button type="submit">Save Loan</button><button type="button" class="secondary" id="clearLoan">Clear form</button></div>
+   <p class="muted">Interest is calculated as 20% of the original loan amount (flat interest). Total payable = loan amount + 20% interest. Due date = issue date + selected term.</p>
+  </form>
+ </div>
+ <div class="card"><h2>Loans Register</h2><input class="search" id="loanSearch" placeholder="Search loan ID or member name"><div class="table-wrap"><table><thead><tr><th>Loan ID</th><th>Member</th><th>Amount</th><th>Interest 20%</th><th>Total payable</th><th>Paid</th><th>Balance</th><th>Issue date</th><th>Due date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="loanRows"></tbody></table></div></div>
+</section>
+
+<section class="panel" id="repayments">
+ <div class="card">
+  <h2>Record / Edit Repayment</h2>
+  <form id="repaymentForm">
+   <div class="grid">
+    <div class="field"><label>Payer / member name *</label><input id="payerName" list="payerOptions" required placeholder="Enter payer name"><datalist id="payerOptions"></datalist></div>
+    <div class="field"><label>Loan ID (automatic)</label><select id="repayLoanId" required><option value="">Select payer first</option></select></div>
+    <div class="field"><label>Payment date *</label><input id="paymentDate" type="date" required></div>
+    <div class="field"><label>Paid amount (UGX) *</label><input id="paidAmount" type="number" min="1" step="1" required placeholder="Amount paid"></div>
+   </div>
+   <div class="actions"><button type="submit">Save Repayment</button><button type="button" class="secondary" id="clearRepayment">Clear form</button></div>
+   <p class="muted">When a repayment is saved, it is automatically deducted from that loan's outstanding balance. If the member has more than one open loan, choose the correct Loan ID.</p>
+  </form>
+ </div>
+ <div class="card"><h2>Repayments Register</h2><input class="search" id="repaymentSearch" placeholder="Search payer or loan ID"><div class="table-wrap"><table><thead><tr><th>Receipt ID</th><th>Payer name</th><th>Loan ID</th><th>Payment date</th><th>Paid amount</th><th>Actions</th></tr></thead><tbody id="repaymentRows"></tbody></table></div></div>
+</section>
+
+<section class="panel" id="reports"><div class="card"><h2>Monthly Management Report</h2><div class="grid"><div class="field"><label>Reporting month</label><input id="reportMonth" type="month"></div><div class="field"><label>Branch</label><input value="Namulanda" readonly></div></div><div class="actions"><button id="runReport">Generate report</button><button class="secondary" onclick="window.print()">Print report</button></div><div id="reportOutput" class="card" style="margin-top:12px">Choose a reporting month and generate the report.</div></div></section>
+<section class="panel" id="expenses"><div class="card"><h2>Expenses Register</h2><form id="expenseForm"><div class="grid"><div class="field"><label>Amount (UGX) *</label><input id="expenseAmount" type="number" min="1" required></div><div class="field"><label>Category *</label><input id="expenseCategory" list="expenseCategories" required placeholder="Enter or choose category"><datalist id="expenseCategories"><option>Rent</option><option>Transport</option><option>Utilities</option><option>Stationery</option><option>Internet</option><option>Salary</option></datalist></div><div class="field"><label>Date (automatic)</label><input id="expenseDate" type="date" readonly></div><div class="field"><label>Description</label><input id="expenseDescription"></div></div><div class="actions"><button>Save expense</button></div></form></div><div class="card"><h3>Expenses list</h3><div id="expenseRows" class="table-wrap"></div><h3>Category totals</h3><div id="expenseTotals"></div><h3>Grand total: <span id="expenseGrand">UGX 0</span></h3></div></section>
+<section class="panel" id="savings"><div class="card"><h2>Savings / Account Transactions</h2><form id="savingForm"><div class="grid"><div class="field"><label>Member / account holder</label><input id="savingName" required></div><div class="field"><label>Amount (UGX)</label><input id="savingAmount" type="number" min="1" required></div><div class="field"><label>Transaction</label><select id="savingType"><option>Deposit</option><option>Withdrawal</option></select></div><div class="field"><label>Bank account / Internet service provider</label><input id="savingProvider" list="providers" required placeholder="Select or enter provider"><datalist id="providers"><option>COFISEE Cash Account</option><option>Bank of Uganda</option><option>Centenary Bank</option><option>Stanbic Bank</option><option>Airtel</option><option>MTN</option><option>Other</option></datalist></div></div><div class="actions"><button>Save transaction</button></div></form></div><div class="card"><h3>Savings transactions</h3><div id="savingRows" class="table-wrap"></div><h3>Net savings balance: <span id="savingNet">UGX 0</span></h3></div></section>
+<section class="panel" id="guarantors"><div class="card"><h2>Loan Guarantors Register</h2><form id="guarantorForm"><div class="grid"><div class="field"><label>Loan ID</label><input id="guarantorLoan" list="loanOptions" required></div><div class="field"><label>Guarantor full name</label><input id="guarantorName" required></div><div class="field"><label>Phone number</label><input id="guarantorPhone" required></div><div class="field"><label>National ID</label><input id="guarantorNin"></div><div class="field"><label>Relationship</label><input id="guarantorRelation"></div></div><datalist id="loanOptions"></datalist><div class="actions"><button>Save guarantor</button></div></form></div><div class="card"><h3>Guarantors list</h3><div id="guarantorRows" class="table-wrap"></div></div></section>
+<section class="panel" id="loanportal"><div class="card"><h2>Loan Search Portal</h2><div class="field"><label>Enter Loan ID</label><input id="portalLoanId" placeholder="e.g. COF00001-L1"></div><div id="portalResult" style="margin-top:12px"></div></div></section>
+
+</main>
+<script>
+const KEY='cofisee_local_v1';
+let db=JSON.parse(localStorage.getItem(KEY)||'{"members":[],"loans":[],"repayments":[]}');db.expenses=db.expenses||[];db.savings=db.savings||[];db.guarantors=db.guarantors||[];
+let editingMember=null,editingLoan=null,editingRepayment=null;
+const $=id=>document.getElementById(id), money=n=>'UGX '+Number(n||0).toLocaleString('en-UG');
+const today=()=>new Date().toISOString().slice(0,10);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function save(){localStorage.setItem(KEY,JSON.stringify(db));render()}
+function dateAdd(d,days){if(!d)return '';let x=new Date(d+'T12:00:00');x.setDate(x.getDate()+Number(days));return x.toISOString().slice(0,10)}
+function memberCategory(d){return d&&d.slice(0,7)===today().slice(0,7)?'New':'Old'}
+function memberByName(n){return db.members.find(m=>m.name.toLowerCase()===String(n).trim().toLowerCase())}
+function loanCalc(l){let paid=db.repayments.filter(r=>r.loanId===l.id).reduce((s,r)=>s+Number(r.amount),0);let interest=Math.round(Number(l.amount)*.20);let total=Number(l.amount)+interest;let balance=Math.max(0,total-paid);let status=balance<=0?'Cleared':(today()>=l.dueDate?'Default':'Active');return {paid,interest,total,balance,status}}
+function statusTag(s){let c=s.toLowerCase();return `<span class="status ${c}">${s}</span>`}
+function render(){
+ $('memberCount').textContent=db.members.length;$('loanCount').textContent=db.loans.length;
+ let calcs=db.loans.map(loanCalc);$('outstandingTotal').textContent=money(calcs.reduce((s,c)=>s+c.balance,0));$('defaultCount').textContent=calcs.filter(c=>c.status==='Default').length;
+ $('memberRows').innerHTML=db.members.filter(m=>(m.name+m.phone+m.nin+m.id).toLowerCase().includes($('memberSearch').value.toLowerCase())).map(m=>`<tr><td>${esc(m.id)}</td><td>${esc(m.name)}</td><td>${esc(m.phone)}</td><td>${esc(m.nin)}</td><td>${esc(m.date)}</td><td>${statusTag(memberCategory(m.date))}</td><td><button class="secondary" onclick="editMember('${m.id}')">Edit</button> <button class="danger" onclick="delMember('${m.id}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty">No members registered.</td></tr>';
+ $('memberOptions').innerHTML=db.members.map(m=>`<option value="${esc(m.name)}">`).join('');
+ $('payerOptions').innerHTML=db.members.map(m=>`<option value="${esc(m.name)}">`).join('');
+ $('loanRows').innerHTML=db.loans.filter(l=>(l.id+l.name).toLowerCase().includes($('loanSearch').value.toLowerCase())).map(l=>{let c=loanCalc(l);return `<tr><td>${esc(l.id)}</td><td>${esc(l.name)}</td><td>${money(l.amount)}</td><td>${money(c.interest)}</td><td>${money(c.total)}</td><td>${money(c.paid)}</td><td>${money(c.balance)}</td><td>${esc(l.issueDate)}</td><td>${esc(l.dueDate)}</td><td>${statusTag(c.status)}</td><td><button class="secondary" onclick="editLoan('${l.id}')">Edit</button> <button class="danger" onclick="delLoan('${l.id}')">Delete</button></td></tr>`}).join('')||'<tr><td colspan="11" class="empty">No loans issued.</td></tr>';
+ $('repaymentRows').innerHTML=db.repayments.filter(r=>(r.name+r.loanId).toLowerCase().includes($('repaymentSearch').value.toLowerCase())).map(r=>`<tr><td>${esc(r.id)}</td><td>${esc(r.name)}</td><td>${esc(r.loanId)}</td><td>${esc(r.date)}</td><td>${money(r.amount)}</td><td><button class="secondary" onclick="editRepayment('${r.id}')">Edit</button> <button class="danger" onclick="delRepayment('${r.id}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="6" class="empty">No repayments recorded.</td></tr>';
+}
+function clearMember(){editingMember=null;$('memberForm').reset();$('memberDate').value=today();$('memberId').value='';$('memberCategory').value=''}
+function clearLoan(){editingLoan=null;$('loanForm').reset();$('issueDate').value=today();calcLoanForm()}
+function clearRepayment(){editingRepayment=null;$('repaymentForm').reset();$('paymentDate').value=today();$('repayLoanId').innerHTML='<option value="">Select payer first</option>'}
+function calcMemberForm(){$('memberCategory').value=memberCategory($('memberDate').value)}
+function calcLoanForm(){let a=Number($('loanAmount').value||0),t=$('loanTerm').value,d=$('issueDate').value;$('loanInterest').value=a?money(Math.round(a*.2)):'';$('loanTotal').value=a?money(a+Math.round(a*.2)):'';$('dueDate').value=d&&t?dateAdd(d,t):'';let m=memberByName($('loanMember').value);$('loanMemberId').value=m?m.id:''}
+function fillLoanChoices(){let m=memberByName($('payerName').value);let ls=db.loans.filter(l=>m&&l.memberId===m.id&&loanCalc(l).balance>0);$('repayLoanId').innerHTML=ls.length?ls.map(l=>`<option value="${esc(l.id)}">${esc(l.id)} — balance ${money(loanCalc(l).balance)}</option>`).join():'<option value="">No outstanding loan found</option>'}
+$('memberForm').addEventListener('submit',e=>{e.preventDefault();let name=$('memberName').value.trim(),phone=$('memberPhone').value.trim(),nin=$('memberNin').value.trim(),date=$('memberDate').value;if(db.members.some(m=>m.nin===nin&&m.id!==editingMember)){alert('This National ID number is already registered.');return}let m={branch:'Namulanda',id:editingMember||'COF'+String(Math.max(0,...db.members.map(x=>Number(x.id.replace('COF',''))))+1).padStart(5,'0'),name,phone,nin,date};if(editingMember)db.members[db.members.findIndex(x=>x.id===editingMember)]=m;else db.members.push(m);clearMember();save()});
+$('loanForm').addEventListener('submit',e=>{e.preventDefault();let m=memberByName($('loanMember').value),amount=Number($('loanAmount').value),issueDate=$('issueDate').value,term=$('loanTerm').value;if(!m){alert('Register the member first, then select their exact name.');return}let count=db.loans.filter(l=>l.memberId===m.id&&l.id!==editingLoan).length+1;let id=editingLoan||m.id+'-L'+count;let l={id,memberId:m.id,name:m.name,amount,issueDate,term,dueDate:dateAdd(issueDate,term)};if(editingLoan)db.loans[db.loans.findIndex(x=>x.id===editingLoan)]=l;else db.loans.push(l);clearLoan();save()});
+$('repaymentForm').addEventListener('submit',e=>{e.preventDefault();let l=db.loans.find(x=>x.id===$('repayLoanId').value);if(!l){alert('Choose a valid loan for this payer.');return}let amount=Number($('paidAmount').value);let previous=editingRepayment?db.repayments.find(r=>r.id===editingRepayment):null;let balance=loanCalc(l).balance+(previous&&previous.loanId===l.id?Number(previous.amount):0);if(amount>balance){alert('Payment is greater than the outstanding balance ('+money(balance)+').');return}let r={id:editingRepayment||'RCPT'+String(Date.now()),name:l.name,loanId:l.id,date:$('paymentDate').value,amount};if(editingRepayment)db.repayments[db.repayments.findIndex(x=>x.id===editingRepayment)]=r;else db.repayments.push(r);clearRepayment();save()});
+$('memberDate').addEventListener('change',calcMemberForm);$('loanAmount').addEventListener('input',calcLoanForm);$('issueDate').addEventListener('change',calcLoanForm);$('loanTerm').addEventListener('change',calcLoanForm);$('loanMember').addEventListener('input',calcLoanForm);$('payerName').addEventListener('input',fillLoanChoices);
+['memberSearch','loanSearch','repaymentSearch'].forEach(id=>$(id).addEventListener('input',render));
+function editMember(id){let m=db.members.find(x=>x.id===id);editingMember=id;$('memberName').value=m.name;$('memberPhone').value=m.phone;$('memberNin').value=m.nin;$('memberDate').value=m.date;$('memberId').value=m.id;calcMemberForm();window.scrollTo(0,0)}
+function delMember(id){if(db.loans.some(l=>l.memberId===id)){alert('This member has loan records. Delete or retain the related loans first.');return}if(confirm('Delete this member?')){db.members=db.members.filter(m=>m.id!==id);save()}}
+function editLoan(id){let l=db.loans.find(x=>x.id===id);editingLoan=id;$('loanMember').value=l.name;$('loanAmount').value=l.amount;$('issueDate').value=l.issueDate;$('loanTerm').value=l.term;calcLoanForm();window.scrollTo(0,0)}
+function delLoan(id){if(db.repayments.some(r=>r.loanId===id)){alert('This loan has repayments. Delete its repayments first, or keep the loan record.');return}if(confirm('Delete this loan?')){db.loans=db.loans.filter(l=>l.id!==id);save()}}
+function editRepayment(id){let r=db.repayments.find(x=>x.id===id);editingRepayment=id;$('payerName').value=r.name;fillLoanChoices();$('repayLoanId').value=r.loanId;$('paymentDate').value=r.date;$('paidAmount').value=r.amount;window.scrollTo(0,0)}
+function delRepayment(id){if(confirm('Delete this repayment? The loan balance will increase automatically.')){db.repayments=db.repayments.filter(r=>r.id!==id);save()}}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===b.dataset.tab))}));
+$('clearMember').onclick=clearMember;$('clearLoan').onclick=clearLoan;$('clearRepayment').onclick=clearRepayment;
+$('memberDate').value=today();$('issueDate').value=today();$('paymentDate').value=today();calcMemberForm();calcLoanForm();render();
+
+// Additional management modules
+const fmtDate=()=>new Date().toISOString().slice(0,10);
+function renderExtras(){
+ const expenses=db.expenses||[], savings=db.savings||[], gs=db.guarantors||[];
+ $('expenseDate').value=fmtDate();
+ $('expenseRows').innerHTML='<table><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th></th></tr>'+expenses.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.category)}</td><td>${esc(x.description)}</td><td>${money(x.amount)}</td><td><button class="danger" onclick="removeExpense('${x.id}')">Delete</button></td></tr>`).join('')+'</table>';
+ let groups={};expenses.forEach(x=>groups[x.category]=(groups[x.category]||0)+Number(x.amount));
+ $('expenseTotals').innerHTML='<table><tr><th>Category</th><th>Total</th></tr>'+Object.entries(groups).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${money(v)}</td></tr>`).join('')+'</table>';$('expenseGrand').textContent=money(expenses.reduce((s,x)=>s+Number(x.amount),0));
+ $('savingRows').innerHTML='<table><tr><th>Date</th><th>Name</th><th>Type</th><th>Bank / ISP</th><th>Amount</th><th></th></tr>'+savings.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.name)}</td><td>${esc(x.type)}</td><td>${esc(x.provider)}</td><td>${money(x.amount)}</td><td><button class="danger" onclick="removeSaving('${x.id}')">Delete</button></td></tr>`).join('')+'</table>';
+ let net=savings.reduce((s,x)=>s+(x.type==='Deposit'?1:-1)*Number(x.amount),0);$('savingNet').textContent=money(net);$('dashSavings').textContent=money(net);
+ $('guarantorRows').innerHTML='<table><tr><th>Loan ID</th><th>Name</th><th>Phone</th><th>National ID</th><th>Relationship</th><th></th></tr>'+gs.map(x=>`<tr><td>${esc(x.loanId)}</td><td>${esc(x.name)}</td><td>${esc(x.phone)}</td><td>${esc(x.nin)}</td><td>${esc(x.relation)}</td><td><button class="danger" onclick="removeGuarantor('${x.id}')">Delete</button></td></tr>`).join('')+'</table>';
+ $('loanOptions').innerHTML=db.loans.map(l=>`<option value="${esc(l.id)}">`).join('');
+ $('dashInterest').textContent=money(db.loans.reduce((s,l)=>s+loanCalc(l).interest,0));$('dashExpenses').textContent=money(expenses.reduce((s,x)=>s+Number(x.amount),0));
+}
+function drawBars(canvasId,labels,values,title){let c=$(canvasId);if(!c)return;let ctx=c.getContext('2d'),w=c.clientWidth||600,h=220;c.width=w*devicePixelRatio;c.height=h*devicePixelRatio;ctx.scale(devicePixelRatio,devicePixelRatio);ctx.clearRect(0,0,w,h);let max=Math.max(1,...values),left=36,bottom=190,usable=w-left-12,bar=Math.max(8,usable/(values.length*1.7));ctx.font='11px Arial';ctx.fillStyle='#344054';ctx.fillText(title,8,15);values.forEach((v,i)=>{let x=left+i*(usable/Math.max(1,values.length))+(usable/Math.max(1,values.length)-bar)/2,hh=(v/max)*145;ctx.fillStyle='#16834a';ctx.fillRect(x,bottom-hh,bar,hh);ctx.fillStyle='#344054';ctx.fillText(String(v),x,bottom-hh-5);ctx.save();ctx.translate(x+bar/2,bottom+8);ctx.rotate(-.35);ctx.fillText(labels[i],0,0);ctx.restore()})}
+function drawDashboard(){let months=[];for(let i=5;i>=0;i--){let d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);months.push(d.toISOString().slice(0,7))}let mc=months.map(m=>db.members.filter(x=>x.date.startsWith(m)).length),lc=months.map(m=>db.loans.filter(x=>x.issueDate.startsWith(m)).length);drawBars('memberChart',months,mc,'New members by month');drawBars('loanChart',months,lc,'Loans issued by month')}
+function makeReport(){let month=$('reportMonth').value;if(!month){alert('Select reporting month');return}let newMembers=db.members.filter(x=>x.date.startsWith(month)),issued=db.loans.filter(x=>x.issueDate.startsWith(month)),repays=db.repayments.filter(x=>x.date.startsWith(month)),exps=db.expenses.filter(x=>x.date.startsWith(month));let interest=issued.reduce((s,l)=>s+loanCalc(l).interest,0),loanValue=issued.reduce((s,l)=>s+Number(l.amount),0),paid=repays.reduce((s,r)=>s+Number(r.amount),0),expenses=exps.reduce((s,x)=>s+Number(x.amount),0),defaults=db.loans.filter(l=>l.dueDate.startsWith(month)&&loanCalc(l).status==='Default');$('reportOutput').innerHTML=`<h3>COFISEE MICROFINANCE — NAMULANDA BRANCH</h3><p><b>Reporting month:</b> ${esc(month)}</p><table><tr><th>Indicator</th><th>Result</th></tr><tr><td>New members registered</td><td>${newMembers.length}</td></tr><tr><td>Loans issued</td><td>${issued.length}</td></tr><tr><td>Total loan principal issued</td><td>${money(loanValue)}</td></tr><tr><td>Expected interest at 20% on loans issued</td><td>${money(interest)}</td></tr><tr><td>Repayments received</td><td>${money(paid)}</td></tr><tr><td>Expenses</td><td>${money(expenses)}</td></tr><tr><td>Defaulted loans due in month</td><td>${defaults.length}</td></tr><tr><td>Outstanding portfolio (all loans)</td><td>${money(db.loans.reduce((s,l)=>s+loanCalc(l).balance,0))}</td></tr></table><p><b>Note:</b> Interest shown is the calculated 20% expected interest on loans issued in the selected month, not necessarily cash interest collected.</p>`}
+function showLoanPortal(){let id=$('portalLoanId').value.trim(),l=db.loans.find(x=>x.id.toLowerCase()===id.toLowerCase());if(!id){$('portalResult').innerHTML='';return}if(!l){$('portalResult').textContent='No matching loan found.';return}let c=loanCalc(l);let installments=Array.from({length:4},(_,i)=>({n:i+1,date:dateAdd(l.issueDate,(i+1)*7),amount:c.total/4}));$('portalResult').innerHTML=`<h3>${esc(l.id)} — ${esc(l.name)}</h3><p>Principal: ${money(l.amount)} | Interest: ${money(c.interest)} | Total: ${money(c.total)} | Paid: ${money(c.paid)} | Balance: <b>${money(c.balance)}</b> | Status: ${statusTag(c.status)}</p><h3>Four-week amortization schedule</h3><p class="muted">Illustrative equal installments for a one-month (28-day) term. Amounts are rounded to whole UGX; final installment adjusts any rounding difference.</p><table><tr><th>Installment</th><th>Due date</th><th>Scheduled amount</th></tr>${installments.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.date)}</td><td>${money(i===3?c.total-(Math.round(c.total/4)*3):Math.round(c.total/4))}</td></tr>`).join('')}</table>`}
+window.removeExpense=id=>{if(confirm('Delete expense?')){db.expenses=db.expenses.filter(x=>x.id!==id);save();renderExtras()}};
+window.removeSaving=id=>{if(confirm('Delete transaction?')){db.savings=db.savings.filter(x=>x.id!==id);save();renderExtras()}};
+window.removeGuarantor=id=>{if(confirm('Delete guarantor?')){db.guarantors=db.guarantors.filter(x=>x.id!==id);save();renderExtras()}};
+$('expenseForm').addEventListener('submit',e=>{e.preventDefault();db.expenses.push({id:'EXP'+Date.now(),amount:Number($('expenseAmount').value),category:$('expenseCategory').value.trim(),date:fmtDate(),description:$('expenseDescription').value.trim()});e.target.reset();$('expenseDate').value=fmtDate();save();renderExtras()});
+$('savingForm').addEventListener('submit',e=>{e.preventDefault();db.savings.push({id:'SAV'+Date.now(),name:$('savingName').value.trim(),amount:Number($('savingAmount').value),type:$('savingType').value,provider:$('savingProvider').value.trim(),date:fmtDate()});e.target.reset();save();renderExtras()});
+$('guarantorForm').addEventListener('submit',e=>{e.preventDefault();let loanId=$('guarantorLoan').value.trim();if(!db.loans.some(l=>l.id===loanId)){alert('Enter a valid Loan ID from the loans register.');return}db.guarantors.push({id:'GUA'+Date.now(),loanId,name:$('guarantorName').value.trim(),phone:$('guarantorPhone').value.trim(),nin:$('guarantorNin').value.trim(),relation:$('guarantorRelation').value.trim()});e.target.reset();save();renderExtras()});
+$('runReport').onclick=makeReport;$('portalLoanId').addEventListener('input',showLoanPortal);
+const originalRender=render;render=function(){originalRender();renderExtras();drawDashboard()};
+$('reportMonth').value=fmtDate().slice(0,7);render();
+
+</script>
+</body></html>
