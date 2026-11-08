@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>COFISEE Microfinance — Secure Cloud System</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#12304a;--blue:#1769aa;--green:#16834a;--bg:#f3f6fa;--line:#dce4ec;--green:#137a45;--red:#b42318;--amber:#946200}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#1d2939}
+header{background:#16834a;color:white;padding:18px 16px}header h1{margin:0 0 5px;font-size:22px}header p{margin:0;color:#d7e6f2;font-size:13px}
+main{max-width:1200px;margin:18px auto;padding:0 12px}.notice{background:#fff7e6;border:1px solid #f0d58a;padding:12px;border-radius:8px;margin-bottom:14px;font-size:13px;line-height:1.45}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.tab{border:1px solid var(--line);background:white;padding:10px 15px;border-radius:7px;font-weight:bold;color:var(--navy);cursor:pointer}.tab.active{background:var(--blue);color:white;border-color:var(--blue)}
+.panel{display:none}.panel.active{display:block}.card{background:white;border:1px solid var(--line);border-radius:10px;padding:15px;margin-bottom:14px;box-shadow:0 1px 3px #1525360b}
+h2{font-size:18px;margin:0 0 13px;color:var(--navy)}h3{font-size:15px;margin:0 0 12px;color:var(--navy)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px}.field label{display:block;font-size:12px;font-weight:bold;margin-bottom:5px;color:#475467}
+input,select{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;background:white;min-width:0}
+input[readonly]{background:#f1f5f9;color:#344054}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button{border:0;border-radius:6px;padding:10px 14px;background:var(--blue);color:white;font-weight:bold;cursor:pointer}button.secondary{background:#e8eef5;color:var(--navy)}button.danger{background:#b42318}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.stat{background:white;border:1px solid var(--line);border-radius:9px;padding:12px}.stat small{display:block;color:#667085}.stat strong{font-size:20px;color:var(--navy)}
+.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}th,td{padding:10px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{background:#f8fafc;color:#344054}
+.status{font-weight:bold;padding:4px 7px;border-radius:5px;display:inline-block}.status.default{background:#fee4e2;color:var(--red)}.status.cleared{background:#dcfae6;color:var(--green)}.status.pending{background:#fff1cc;color:var(--amber)}.status.active{background:#e6f1ff;color:#175cd3}
+.search{max-width:300px;margin:0 0 10px}.muted{color:#667085;font-size:12px}.empty{text-align:center;color:#667085;padding:18px}
+@media(max-width:760px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:420px){.grid{grid-template-columns:1fr}.tabs .tab{flex:1}}
+
+/* COFISEE green report and identity-photo styling */
+.report-sheet{background:#fff;border:2px solid #16834a;border-radius:10px;padding:20px;color:#183b2a}
+.report-sheet h2,.report-sheet h3{color:#116b3b;border-bottom:1px solid #cfe8d8;padding-bottom:7px;margin-top:18px}
+.report-sheet .report-head{background:#e8f5ec;border:1px solid #b7ddc3;border-left:6px solid #16834a;padding:14px;border-radius:8px}
+.report-sheet th{background:#dff1e5;color:#124b2c}.report-sheet td{background:#fff}.report-sheet .profit-line td{background:#e8f5ec;font-weight:bold;color:#116b3b}
+@media print{.report-sheet{border:2px solid #16834a!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}.no-print{display:none!important}}
+
+/* Secure cloud access */
+#cloudGate{position:fixed;inset:0;z-index:99999;background:#f3f6fa;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
+#cloudGate .gate-card{width:min(520px,100%);background:#fff;border:1px solid #dce4ec;border-radius:14px;padding:22px;box-shadow:0 12px 40px #12304a20}
+#cloudGate h2{margin-bottom:8px}#cloudGate input{margin:5px 0 12px}#cloudGate .gate-note{font-size:12px;color:#667085;line-height:1.5}
+#cloudBar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#e8f5ec;border:1px solid #b7ddc3;border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:13px}
+#staffRows table{min-width:850px}.permission-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.permission-item{border:1px solid var(--line);border-radius:7px;padding:8px;font-size:12px}
+.panel[data-readonly="true"] form,.panel[data-readonly="true"] td button{display:none!important}
+@media(max-width:600px){.permission-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<div id="cloudGate">
+ <div class="gate-card">
+  <h2>COFISEE Secure Staff Login</h2>
+  <p class="muted">Connect to the COFISEE cloud database. Only staff accounts authorised by the administrator can enter.</p>
+  <label>Supabase Project URL</label><input id="cloudUrl" type="url" placeholder="https://your-project.supabase.co" autocomplete="url">
+  <label>Supabase Publishable Key</label><input id="cloudKey" type="text" placeholder="sb_publishable_..." autocomplete="off">
+  <div class="actions"><button type="button" id="connectCloud">Save connection</button></div>
+  <hr style="border:0;border-top:1px solid #dce4ec;margin:16px 0">
+  <label>Staff email</label><input id="staffEmail" type="email" placeholder="staff@cofisee.com" autocomplete="username">
+  <label>Password</label><input id="staffPassword" type="password" placeholder="Your password" autocomplete="current-password">
+  <div class="actions"><button type="button" id="staffLogin">Sign in securely</button></div>
+  <p id="gateMessage" class="gate-note" aria-live="polite">First-time setup: enter the Project URL and publishable key from your Supabase project. Do not enter a secret/service-role key here.</p>
+ </div>
+</div>
+<header><h1>COFISEE MICROFINANCE</h1><p>Member Register • Loan Register • Repayment Register</p></header>
+<main>
+<div id="cloudBar"><span id="cloudUserLabel">Cloud database not connected</span><button type="button" class="secondary" id="cloudLogout">Sign out</button></div>
+<div class="notice"><strong>Important:</strong> COFISEE now requires staff sign-in and a connected cloud database. Records are shared only with authorised staff accounts. Keep a separate backup of your records.</div>
+<div class="notice"><b>SMS reminder setup:</b> overdue SMS delivery to 0727204632 is not activated in this standalone file. Automatic SMS requires a connected SMS gateway/provider, account credentials, and a secure server-side function. The phone number alone cannot send SMS from a web page.</div>
+<div class="card" id="dataBackupCard" style="border-left:5px solid #16834a">
+ <h2>Data Backup & Transfer</h2>
+ <p>Save a complete copy of your COFISEE records, then restore that copy on another phone or computer. The backup includes members, loans, repayments, expenses, savings, guarantors, cashbook entries and opening cash.</p>
+ <div class="actions no-print">
+  <button type="button" id="exportAllData">Download Full Backup (JSON)</button>
+  <button type="button" class="secondary" id="chooseImportData">Import / Restore Backup</button>
+  <input type="file" id="importDataFile" accept=".json,application/json" style="display:none">
+ </div>
+ <p class="muted" id="backupStatus" aria-live="polite">Tip: Export a fresh backup before replacing or upgrading this HTML file. Keep the backup somewhere safe.</p>
+</div>
+<div class="stats">
+ <div class="stat"><small>Registered members</small><strong id="memberCount">0</strong></div>
+ <div class="stat"><small>Total loans issued</small><strong id="loanCount">0</strong></div>
+ <div class="stat"><small>Outstanding balance</small><strong id="outstandingTotal">UGX 0</strong></div>
+ <div class="stat"><small>Defaulted loans</small><strong id="defaultCount">0</strong></div><div class="stat"><small>Cash position</small><strong id="dashCash">UGX 0</strong></div><div class="stat"><small>Net savings</small><strong id="dashNetSavings">UGX 0</strong></div><div class="stat"><small>Net profit</small><strong id="dashProfit">UGX 0</strong></div><div class="stat"><small>Combined position</small><strong id="dashGrand">UGX 0</strong></div>
+</div>
+<div class="tabs">
+ <button class="tab active" data-tab="dashboard">Dashboard</button><button class="tab" data-tab="members">Members</button><button class="tab" data-tab="loans">Loans</button><button class="tab" data-tab="repayments">Repayments</button><button class="tab" data-tab="reports">Monthly Report</button><button class="tab" data-tab="expenses">Expenses</button><button class="tab" data-tab="savings">Savings</button><button class="tab" data-tab="guarantors">Guarantors</button><button class="tab" data-tab="loanportal">Loan Search</button><button class="tab" data-tab="amortization">Amortization</button><button class="tab" data-tab="cashbook">Cashbook</button><button class="tab" data-tab="defaulters">Defaulters Portal</button><button class="tab" data-tab="staffAdmin" id="staffAdminTab" style="display:none">Staff & Permissions</button>
+</div>
+<section class="panel active" id="dashboard"><div class="card"><h2>COFISEE Dashboard — Namulanda Branch</h2><div class="stats"><div class="stat"><small>Interest earned on loans</small><strong id="dashInterest">UGX 0</strong></div><div class="stat"><small>Expenses recorded</small><strong id="dashExpenses">UGX 0</strong></div><div class="stat"><small>Savings net balance</small><strong id="dashSavings">UGX 0</strong></div><div class="stat"><small>Branch</small><strong>Namulanda</strong></div><div class="stat"><small>Cash position</small><strong id="dashCash2">UGX 0</strong></div><div class="stat"><small>Net profit</small><strong id="dashProfit2">UGX 0</strong></div><div class="stat"><small>Combined position</small><strong id="dashGrand2">UGX 0</strong></div></div><h3>Member growth</h3><canvas id="memberChart" height="120" style="width:100%;max-height:240px"></canvas><h3>Loans issued by month</h3><canvas id="loanChart" height="120" style="width:100%;max-height:240px"></canvas></div></section>
+
+<section class="panel" id="members">
+ <div class="card">
+  <h2>Register / Edit Member</h2>
+  <form id="memberForm">
+   <div class="grid">
+    <div class="field"><label>Member name *</label><input id="memberName" required placeholder="Full name"></div>
+    <div class="field"><label>Phone number *</label><input id="memberPhone" required type="tel" placeholder="07XXXXXXXX"></div>
+    <div class="field"><label>National ID number *</label><input id="memberNin" required placeholder="National ID number"></div>
+    <div class="field"><label>Register date *</label><input id="memberDate" required type="date"></div><div class="field"><label>Address / village *</label><input id="memberAddress" required placeholder="Village, parish, district"></div><div class="field"><label>Branch</label><input id="memberBranch" value="Namulanda" readonly></div>
+    <div class="field"><label>Member ID (automatic)</label><input id="memberId" readonly placeholder="Generated when saved"></div>
+    <div class="field"><label>Member category</label><input id="memberCategory" readonly placeholder="New / Old"></div>
+    
+   </div>
+   <div class="actions"><button type="submit">Save Member</button><button type="button" class="secondary" id="clearMember">Clear form</button></div>
+   <p class="muted">New = registered in the current calendar month. Old = registered before the current month. The category updates when the date changes.</p>
+  </form>
+ </div>
+ <div class="card"><h2>Members Register</h2><input class="search" id="memberSearch" placeholder="Search name, phone, NIN or member ID"><div class="table-wrap"><table><thead><tr><th>Member ID</th><th>Name</th><th>Phone</th><th>National ID</th><th>Register date</th><th>Address</th><th>Category</th><th>Actions</th></tr></thead><tbody id="memberRows"></tbody></table></div></div>
+</section>
+
+<section class="panel" id="loans">
+ <div class="card">
+  <h2>Issue / Edit Loan</h2>
+  <form id="loanForm">
+   <div class="grid">
+    <div class="field"><label>Member name *</label><input id="loanMember" list="memberOptions" required placeholder="Choose registered member"><datalist id="memberOptions"></datalist></div>
+    <div class="field"><label>Member ID</label><input id="loanMemberId" readonly></div>
+    <div class="field"><label>Loan amount (UGX) *</label><input id="loanAmount" type="number" min="1" step="1" required placeholder="Amount issued"></div>
+    <div class="field"><label>Issue date *</label><input id="issueDate" type="date" required></div>
+    <div class="field"><label>Loan term *</label><select id="loanTerm" required><option value="">Select term</option><option value="7">Weekly — 7 days</option><option value="28">Monthly — 28 days</option><option value="28">Daily repayment — 28-day loan</option><option value="56">2 months — 56 days</option><option value="84">3 months — 84 days</option></select></div>
+    <div class="field"><label>Interest (20%)</label><input id="loanInterest" readonly></div>
+    <div class="field"><label>Total payable</label><input id="loanTotal" readonly></div>
+    <div class="field"><label>Due date (automatic)</label><input id="dueDate" readonly></div>
+   </div>
+   <div class="actions"><button type="submit">Save Loan</button><button type="button" class="secondary" id="clearLoan">Clear form</button></div>
+   <p class="muted">Interest is calculated as 20% of the original loan amount (flat interest). Total payable = loan amount + 20% interest. Due date = issue date + selected term.</p>
+  </form>
+ </div>
+ <div class="card"><h2>Loans Register</h2><input class="search" id="loanSearch" placeholder="Search loan ID or member name"><div class="table-wrap"><table><thead><tr><th>No.</th><th>Loan ID</th><th>Member</th><th>Phone number</th><th>Amount</th><th>Interest 20%</th><th>Total payable</th><th>Paid</th><th>Balance</th><th>Issue date</th><th>Due date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="loanRows"></tbody></table></div></div>
+</section>
+
+<section class="panel" id="repayments">
+ <div class="card">
+  <h2>Record / Edit Repayment</h2>
+  <form id="repaymentForm">
+   <div class="grid">
+    <div class="field"><label>Payer / member name *</label><input id="payerName" list="payerOptions" required placeholder="Enter payer name"><datalist id="payerOptions"></datalist></div>
+    <div class="field"><label>Loan ID (automatic)</label><select id="repayLoanId" required><option value="">Select payer first</option></select></div>
+    <div class="field"><label>Payment date *</label><input id="paymentDate" type="date" required></div>
+    <div class="field"><label>Paid amount (UGX) *</label><input id="paidAmount" type="number" min="1" step="1" required placeholder="Amount paid"></div>
+   </div>
+   <div class="actions"><button type="submit">Save Repayment</button><button type="button" class="secondary" id="clearRepayment">Clear form</button></div>
+   <p class="muted">When a repayment is saved, it is automatically deducted from that loan's outstanding balance. If the member has more than one open loan, choose the correct Loan ID.</p>
+  </form>
+ </div>
+ <div class="card"><h2>Repayments Register</h2><input class="search" id="repaymentSearch" placeholder="Search payer or loan ID"><div class="table-wrap"><table><thead><tr><th>Receipt ID</th><th>Payer name</th><th>Loan ID</th><th>Payment date</th><th>Paid amount</th><th>Actions</th></tr></thead><tbody id="repaymentRows"></tbody></table></div></div>
+</section>
+
+<section class="panel" id="reports"><div class="card"><h2>Monthly Management Report</h2><div class="grid"><div class="field"><label>Reporting month</label><input id="reportMonth" type="month"></div><div class="field"><label>Branch</label><input value="Namulanda" readonly></div><div class="field"><label>Prepared by</label><input id="reportPreparedBy" placeholder="Name of report preparer"></div><div class="field"><label>Report issue date</label><input id="reportIssueDate" type="date"></div></div><div class="actions"><button id="runReport">Generate report</button><button class="secondary" onclick="window.print()">Print report</button></div><div id="reportOutput" class="card" style="margin-top:12px">Choose a reporting month and generate the report.</div><div class="field" style="margin-top:12px"><label>Administrator comments</label><textarea id="adminComments" rows="4" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px" placeholder="Management observations, risks, actions and recommendations..."></textarea></div></div></section>
+<section class="panel" id="expenses"><div class="card"><h2>Expenses Register</h2><form id="expenseForm"><div class="grid"><div class="field"><label>Amount (UGX) *</label><input id="expenseAmount" type="number" min="1" required></div><div class="field"><label>Category *</label><input id="expenseCategory" list="expenseCategories" required placeholder="Enter or choose category"><datalist id="expenseCategories"><option>Rent</option><option>Transport</option><option>Utilities</option><option>Stationery</option><option>Internet</option><option>Salary</option></datalist></div><div class="field"><label>Date (automatic)</label><input id="expenseDate" type="date" readonly></div><div class="field"><label>Description</label><input id="expenseDescription"></div></div><div class="actions"><button>Save expense</button></div></form></div><div class="card"><h3>Expenses list</h3><div id="expenseRows" class="table-wrap"></div><h3>Category totals</h3><div id="expenseTotals"></div><h3>Grand total: <span id="expenseGrand">UGX 0</span></h3></div></section>
+<section class="panel" id="savings"><div class="card"><h2>Savings / Account Transactions</h2><form id="savingForm"><div class="grid"><div class="field"><label>Member / account holder</label><input id="savingName" required></div><div class="field"><label>Amount (UGX)</label><input id="savingAmount" type="number" min="1" required></div><div class="field"><label>Transaction</label><select id="savingType"><option>Deposit</option><option>Withdrawal</option></select></div><div class="field"><label>Bank account / Internet service provider</label><input id="savingProvider" list="providers" required placeholder="Select or enter provider"><datalist id="providers"><option>COFISEE Cash Account</option><option>Bank of Uganda</option><option>Centenary Bank</option><option>Stanbic Bank</option><option>Airtel</option><option>MTN</option><option>Other</option></datalist></div></div><div class="actions"><button>Save transaction</button></div></form></div><div class="card"><h3>Savings transactions</h3><div id="savingRows" class="table-wrap"></div><h3>Net savings balance: <span id="savingNet">UGX 0</span></h3></div></section>
+<section class="panel" id="guarantors"><div class="card"><h2>Loan Guarantors Register</h2><form id="guarantorForm"><div class="grid"><div class="field"><label>Member being guaranteed *</label><input id="guaranteedMember" list="memberOptions" required placeholder="Select borrower"></div><div class="field"><label>Borrower loan ID (automatic)</label><input id="guarantorLoan" readonly></div><div class="field"><label>Guarantor full name *</label><input id="guarantorName" required></div><div class="field"><label>Guarantor phone number *</label><input id="guarantorPhone" required></div><div class="field"><label>Guarantor National ID</label><input id="guarantorNin"></div><div class="field"><label>Relationship to borrower</label><input id="guarantorRelation"></div></div><div class="actions"><button>Save guarantor</button></div></form><p class="muted">Select the borrower. Their current uncleared loan ID will be filled automatically.</p></div><div class="card"><h3>Guarantors list</h3><div id="guarantorRows" class="table-wrap"></div></div></section>
+<section class="panel" id="amortization"><div class="card"><h2>Weekly Amortization Schedule</h2><div class="field"><label>Search member name or loan ID</label><input id="amortSearch" placeholder="Enter member name or loan ID"></div><div id="amortResults" class="table-wrap"></div></div></section>
+<section class="panel" id="loanportal"><div class="card"><h2>Loan Search & Daily Payment History</h2><div class="grid"><div class="field"><label>Search member name or Loan ID</label><input id="portalLoanId" placeholder="Enter member name or loan ID"></div><div class="field"><label>Payment date (daily history)</label><input id="dailyPaymentDate" type="date"></div></div><div id="portalResult" style="margin-top:12px"></div><h3>Daily payment history</h3><div id="dailyHistory" class="table-wrap"></div></div></section>
+<section class="panel" id="cashbook">
+ <div class="card">
+  <h2>Cashbook — Cash Receipts & Payments Ledger</h2>
+  <p class="muted">Record cash movements not already recorded in another register. Opening cash is entered once; each transaction updates the running balance.</p>
+  <div class="grid">
+   <div class="field"><label>Opening cash balance (UGX)</label><input id="openingCash" type="number" min="0" step="1"></div>
+   <div class="field"><label>Current cash position</label><input id="cashPositionDisplay" readonly></div>
+  </div>
+  <div class="stats" style="margin-top:12px">
+   <div class="stat"><small>Total cash received</small><strong id="cashbookInTotal">UGX 0</strong></div>
+   <div class="stat"><small>Total cash paid out</small><strong id="cashbookOutTotal">UGX 0</strong></div>
+   <div class="stat"><small>Net movement</small><strong id="cashbookNetTotal">UGX 0</strong></div>
+   <div class="stat"><small>Number of entries</small><strong id="cashbookEntryCount">0</strong></div>
+  </div>
+  <form id="cashbookForm">
+   <h3 id="cashbookFormTitle">Record cashbook transaction</h3>
+   <div class="grid">
+    <div class="field"><label>Transaction date *</label><input id="cashDate" type="date" required></div>
+    <div class="field"><label>Entry type *</label><select id="cashType"><option>Cash In</option><option>Cash Out</option></select></div>
+    <div class="field"><label>Category *</label><select id="cashCategory" required><option value="">Select category</option><option>Capital introduced</option><option>Loan disbursement</option><option>Loan repayment</option><option>Interest received</option><option>Office rent</option><option>Transport</option><option>Utilities</option><option>Stationery</option><option>Salary / wages</option><option>Bank charges</option><option>Other income</option><option>Other expense</option></select></div>
+    <div class="field"><label>Amount (UGX) *</label><input id="cashAmount" type="number" min="1" step="1" required placeholder="Enter amount"></div>
+    <div class="field"><label>Reference / receipt number</label><input id="cashReference" placeholder="Receipt, voucher or reference"></div>
+    <div class="field"><label>Description / narration *</label><input id="cashDescription" required placeholder="Explain the transaction"></div>
+   </div>
+   <div class="actions"><button type="submit" id="cashSaveButton">Save cashbook entry</button><button type="button" class="secondary" id="cashCancelEdit" style="display:none">Cancel edit</button><button type="button" class="secondary" id="cashClearForm">Clear form</button></div>
+  </form>
+ </div>
+ <div class="card">
+  <h3>Cashbook entries list</h3>
+  <div class="grid">
+   <div class="field"><label>Search entries</label><input id="cashSearch" placeholder="Entry no., category, reference or narration"></div>
+   <div class="field"><label>From date</label><input id="cashFromDate" type="date"></div>
+   <div class="field"><label>To date</label><input id="cashToDate" type="date"></div>
+   <div class="field"><label>Entry type</label><select id="cashFilterType"><option value="">All entries</option><option>Cash In</option><option>Cash Out</option></select></div>
+  </div>
+  <div class="actions no-print"><button type="button" id="cashExport">Download CSV</button><button type="button" class="secondary" id="cashPrint">Print cashbook</button><button type="button" class="secondary" id="cashResetFilters">Clear filters</button></div>
+  <p class="muted">Running balance is calculated chronologically from opening cash and all saved entries, even when the list is filtered.</p>
+  <div id="cashbookRows" class="table-wrap"></div>
+  <p id="cashbookFilterSummary" class="muted"></p>
+ </div>
+</section>
+<section class="panel" id="defaulters"><div class="card"><h2>Defaulters Portal</h2><p class="muted">Loans with a past due date and an unpaid balance.</p><div class="grid"><div class="field"><label>Defaulter month</label><input id="defaulterMonth" type="month"></div><div class="field"><label>Search name, phone or loan ID</label><input class="search" id="defaulterSearch" placeholder="Search defaulter, phone or loan ID"></div></div><div id="defaulterRows" class="table-wrap"></div></div></section>
+
+<section class="panel" id="staffAdmin">
+ <div class="card">
+  <h2>Staff Accounts & Individual Permissions</h2>
+  <p class="muted">Create each staff login in Supabase Authentication → Users → Add user. Then refresh this list and assign access below. Never share the administrator password.</p>
+  <div class="actions"><button type="button" id="refreshStaff">Refresh staff list</button></div>
+  <div id="staffRows" class="table-wrap"><p class="muted">Administrator access required.</p></div>
+ </div>
+ <div class="card"><h3>Permission guide</h3><p class="muted">View allows a staff member to open that module. Edit allows adding, changing and deleting records in that module. The database checks edit permission on every save; hiding controls in the page is not the only security layer.</p></div>
+</section>
+</main>
+<script>
+const KEY='cofisee_local_v1';
+let db=JSON.parse(localStorage.getItem(KEY)||'{"members":[],"loans":[],"repayments":[]}');db.expenses=db.expenses||[];db.savings=db.savings||[];db.guarantors=db.guarantors||[];
+// Full-system backup and restore. Keep the existing local-storage key so current records remain available.
+function downloadFullBackup(){
+ const payload={app:'COFISEE Microfinance',format:'cofisee-backup',version:1,exportedAt:new Date().toISOString(),database:db};
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='COFISEE_Full_Backup_'+new Date().toISOString().slice(0,10)+'.json';
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+ const status=document.getElementById('backupStatus');if(status)status.textContent='Backup download started. Check your phone/computer Downloads folder and keep this JSON file safe.';
+}
+function restoreFullBackup(file){
+ const reader=new FileReader();
+ reader.onload=()=>{
+  try{
+   const parsed=JSON.parse(String(reader.result||''));
+   const incoming=parsed&&parsed.format==='cofisee-backup'?parsed.database:parsed;
+   if(!incoming||typeof incoming!=='object'||!Array.isArray(incoming.members)||!Array.isArray(incoming.loans)||!Array.isArray(incoming.repayments)){
+    throw new Error('This file is not a valid COFISEE backup. It must contain members, loans and repayments.');
+   }
+   if(!confirm('RESTORE BACKUP? This will replace the records currently saved in this browser with the records in the selected backup. Export your current records first if you want to keep them.'))return;
+   const restored={...incoming,
+    members:incoming.members,loans:incoming.loans,repayments:incoming.repayments,
+    expenses:Array.isArray(incoming.expenses)?incoming.expenses:[],
+    savings:Array.isArray(incoming.savings)?incoming.savings:[],
+    guarantors:Array.isArray(incoming.guarantors)?incoming.guarantors:[],
+    cashbook:Array.isArray(incoming.cashbook)?incoming.cashbook:[],
+    openingCash:Number(incoming.openingCash||0)
+   };
+   // Preserve the privacy cleanup already used by this version.
+   restored.members.forEach(m=>{delete m.photo;delete m.ninImage;});
+   db=restored;localStorage.setItem(KEY,JSON.stringify(db));
+   render();if(typeof renderFinanceExtras==='function')renderFinanceExtras();if(window.cofiseeCloudReady&&window.cofiseeCloudSave)window.cofiseeCloudSave();
+   const status=document.getElementById('backupStatus');if(status)status.textContent='Restore successful. '+db.members.length+' members, '+db.loans.length+' loans and '+db.repayments.length+' repayments loaded.';
+   alert('COFISEE backup loaded. If you are signed in, the records are now being synchronised to the shared cloud database.');
+  }catch(err){alert('Could not restore this backup: '+err.message);}
+ };
+ reader.onerror=()=>alert('The selected backup file could not be read. Try selecting it again.');
+ reader.readAsText(file);
+}
+
+// Privacy cleanup: discard previously saved member photos and National ID scan attachments.
+db.members.forEach(m=>{delete m.photo;delete m.ninImage;});
+localStorage.setItem(KEY,JSON.stringify(db));
+let editingMember=null,editingLoan=null,editingRepayment=null;
+const $=id=>document.getElementById(id), money=n=>'UGX '+Number(n||0).toLocaleString('en-UG');
+const today=()=>new Date().toISOString().slice(0,10);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function save(){localStorage.setItem(KEY,JSON.stringify(db));render();if(window.cofiseeCloudReady)window.cofiseeCloudSave()}
+function dateAdd(d,days){if(!d)return '';let x=new Date(d+'T12:00:00');x.setDate(x.getDate()+Number(days));return x.toISOString().slice(0,10)}
+function memberCategory(d){return d&&d.slice(0,7)===today().slice(0,7)?'New':'Old'}
+function memberByName(n){return db.members.find(m=>m.name.toLowerCase()===String(n).trim().toLowerCase())}
+function loanCalc(l){let paid=db.repayments.filter(r=>r.loanId===l.id).reduce((s,r)=>s+Number(r.amount),0);let interest=Math.round(Number(l.amount)*.20);let total=Number(l.amount)+interest;let balance=Math.max(0,total-paid);let status=balance<=0?'Cleared':(today()>=l.dueDate?'Default':'Active');return {paid,interest,total,balance,status}}
+function statusTag(s){let c=s.toLowerCase();return `<span class="status ${c}">${s}</span>`}
+document.getElementById('exportAllData')?.addEventListener('click',downloadFullBackup);
+document.getElementById('chooseImportData')?.addEventListener('click',()=>document.getElementById('importDataFile')?.click());
+document.getElementById('importDataFile')?.addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)restoreFullBackup(f);e.target.value=''});
+function render(){
+ $('memberCount').textContent=db.members.length;$('loanCount').textContent=db.loans.length;
+ let calcs=db.loans.map(loanCalc);$('outstandingTotal').textContent=money(calcs.reduce((s,c)=>s+c.balance,0));$('defaultCount').textContent=calcs.filter(c=>c.status==='Default').length;
+ $('memberRows').innerHTML=db.members.filter(m=>(m.name+m.phone+m.nin+m.id+(m.address||"")).toLowerCase().includes($('memberSearch').value.toLowerCase())).map(m=>`<tr><td>${esc(m.id)}</td><td>${esc(m.name)}</td><td>${esc(m.phone)}</td><td>${esc(m.nin)}</td><td>${esc(m.date)}</td><td>${esc(m.address||"")}</td><td>${statusTag(memberCategory(m.date))}</td><td><button class="secondary" onclick="editMember('${m.id}')">Edit</button> <button class="danger" onclick="delMember('${m.id}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">No members registered.</td></tr>';
+ $('memberOptions').innerHTML=db.members.map(m=>`<option value="${esc(m.name)}">`).join('');
+ $('payerOptions').innerHTML=db.members.map(m=>`<option value="${esc(m.name)}">`).join('');
+ $('loanRows').innerHTML=db.loans.filter(l=>(l.id+l.name+(db.members.find(m=>m.id===l.memberId)?.phone||'')).toLowerCase().includes($('loanSearch').value.toLowerCase())).map((l,index)=>{let c=loanCalc(l),member=db.members.find(m=>m.id===l.memberId);return `<tr><td>${index+1}</td><td>${esc(l.id)}</td><td>${esc(l.name)}</td><td>${esc(member?.phone||'')}</td><td>${money(l.amount)}</td><td>${money(c.interest)}</td><td>${money(c.total)}</td><td>${money(c.paid)}</td><td>${money(c.balance)}</td><td>${esc(l.issueDate)}</td><td>${esc(l.dueDate)}</td><td>${statusTag(c.status)}</td><td><button class="secondary" onclick="editLoan('${l.id}')">Edit</button> <button class="danger" onclick="delLoan('${l.id}')">Delete</button></td></tr>`}).join('')||'<tr><td colspan="13" class="empty">No loans issued.</td></tr>';
+ $('repaymentRows').innerHTML=db.repayments.filter(r=>(r.name+r.loanId).toLowerCase().includes($('repaymentSearch').value.toLowerCase())).map(r=>`<tr><td>${esc(r.id)}</td><td>${esc(r.name)}</td><td>${esc(r.loanId)}</td><td>${esc(r.date)}</td><td>${money(r.amount)}</td><td><button class="secondary" onclick="editRepayment('${r.id}')">Edit</button> <button class="danger" onclick="delRepayment('${r.id}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="6" class="empty">No repayments recorded.</td></tr>';
+}
+function clearMember(){editingMember=null;$('memberForm').reset();$('memberDate').value=today();$('memberId').value='';$('memberCategory').value='';$('memberAddress').value=''}
+function clearLoan(){editingLoan=null;$('loanForm').reset();$('issueDate').value=today();calcLoanForm()}
+function clearRepayment(){editingRepayment=null;$('repaymentForm').reset();$('paymentDate').value=today();$('repayLoanId').innerHTML='<option value="">Select payer first</option>'}
+function calcMemberForm(){$('memberCategory').value=memberCategory($('memberDate').value)}
+function calcLoanForm(){let a=Number($('loanAmount').value||0),t=$('loanTerm').value,d=$('issueDate').value;$('loanInterest').value=a?money(Math.round(a*.2)):'';$('loanTotal').value=a?money(a+Math.round(a*.2)):'';$('dueDate').value=d&&t?dateAdd(d,t):'';let m=memberByName($('loanMember').value);$('loanMemberId').value=m?m.id:''}
+function fillLoanChoices(){let m=memberByName($('payerName').value);let ls=db.loans.filter(l=>m&&l.memberId===m.id&&loanCalc(l).balance>0);$('repayLoanId').innerHTML=ls.length?ls.map(l=>`<option value="${esc(l.id)}">${esc(l.id)} — balance ${money(loanCalc(l).balance)}</option>`).join():'<option value="">No outstanding loan found</option>'}
+$('memberForm').addEventListener('submit',e=>{e.preventDefault();let name=$('memberName').value.trim(),phone=$('memberPhone').value.trim(),nin=$('memberNin').value.trim(),date=$('memberDate').value,address=$('memberAddress').value.trim(),existing=editingMember?db.members.find(x=>x.id===editingMember):null;if(db.members.some(m=>m.nin===nin&&m.id!==editingMember)){alert('This National ID number is already registered.');return}let m={...(existing||{}),branch:'Namulanda',id:editingMember||'COF'+String(Math.max(0,...db.members.map(x=>Number(x.id.replace('COF',''))))+1).padStart(5,'0'),name,phone,nin,date,address};delete m.photo;delete m.ninImage;if(editingMember)db.members[db.members.findIndex(x=>x.id===editingMember)]=m;else db.members.push(m);clearMember();save()});
+$('loanForm').addEventListener('submit',e=>{e.preventDefault();let m=memberByName($('loanMember').value),amount=Number($('loanAmount').value),issueDate=$('issueDate').value,term=$('loanTerm').value;if(!m){alert('Register the member first, then select their exact name.');return}let uncleared=db.loans.find(l=>l.memberId===m.id&&l.id!==editingLoan&&loanCalc(l).balance>0);if(uncleared){alert('This member already has an uncleared loan ('+uncleared.id+'). Clear it before issuing another loan.');return}let count=db.loans.filter(l=>l.memberId===m.id).length+1;let id=editingLoan||m.id+'-L'+count;let l={id,memberId:m.id,name:m.name,amount,issueDate,term,dueDate:dateAdd(issueDate,term)};if(editingLoan)db.loans[db.loans.findIndex(x=>x.id===editingLoan)]=l;else db.loans.push(l);clearLoan();save()});
+$('repaymentForm').addEventListener('submit',e=>{e.preventDefault();let l=db.loans.find(x=>x.id===$('repayLoanId').value);if(!l){alert('Choose a valid loan for this payer.');return}let amount=Number($('paidAmount').value);let previous=editingRepayment?db.repayments.find(r=>r.id===editingRepayment):null;let balance=loanCalc(l).balance+(previous&&previous.loanId===l.id?Number(previous.amount):0);if(amount>balance){alert('Payment is greater than the outstanding balance ('+money(balance)+').');return}let r={id:editingRepayment||'RCPT'+String(Date.now()),name:l.name,loanId:l.id,date:$('paymentDate').value,amount};if(editingRepayment)db.repayments[db.repayments.findIndex(x=>x.id===editingRepayment)]=r;else db.repayments.push(r);clearRepayment();save()});
+$('memberDate').addEventListener('change',calcMemberForm);$('loanAmount').addEventListener('input',calcLoanForm);$('issueDate').addEventListener('change',calcLoanForm);$('loanTerm').addEventListener('change',calcLoanForm);$('loanMember').addEventListener('input',calcLoanForm);$('payerName').addEventListener('input',fillLoanChoices);
+['memberSearch','loanSearch','repaymentSearch'].forEach(id=>$(id).addEventListener('input',render));
+function editMember(id){let m=db.members.find(x=>x.id===id);editingMember=id;$('memberName').value=m.name;$('memberPhone').value=m.phone;$('memberNin').value=m.nin;$('memberDate').value=m.date;$('memberAddress').value=m.address||'';$('memberId').value=m.id;calcMemberForm();window.scrollTo(0,0)}
+function delMember(id){if(db.loans.some(l=>l.memberId===id)){alert('This member has loan records. Delete or retain the related loans first.');return}if(confirm('Delete this member?')){db.members=db.members.filter(m=>m.id!==id);save()}}
+function editLoan(id){let l=db.loans.find(x=>x.id===id);editingLoan=id;$('loanMember').value=l.name;$('loanAmount').value=l.amount;$('issueDate').value=l.issueDate;$('loanTerm').value=l.term;calcLoanForm();window.scrollTo(0,0)}
+function delLoan(id){if(db.repayments.some(r=>r.loanId===id)){alert('This loan has repayments. Delete its repayments first, or keep the loan record.');return}if(confirm('Delete this loan?')){db.loans=db.loans.filter(l=>l.id!==id);save()}}
+function editRepayment(id){let r=db.repayments.find(x=>x.id===id);editingRepayment=id;$('payerName').value=r.name;fillLoanChoices();$('repayLoanId').value=r.loanId;$('paymentDate').value=r.date;$('paidAmount').value=r.amount;window.scrollTo(0,0)}
+function delRepayment(id){if(confirm('Delete this repayment? The loan balance will increase automatically.')){db.repayments=db.repayments.filter(r=>r.id!==id);save()}}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===b.dataset.tab))}));
+$('clearMember').onclick=clearMember;$('clearLoan').onclick=clearLoan;$('clearRepayment').onclick=clearRepayment;
+$('memberDate').value=today();$('issueDate').value=today();$('paymentDate').value=today();calcMemberForm();calcLoanForm();render();
+
+// Additional management modules
+const fmtDate=()=>new Date().toISOString().slice(0,10);
+function renderExtras(){
+ const expenses=db.expenses||[], savings=db.savings||[], gs=db.guarantors||[];
+ $('expenseDate').value=fmtDate();
+ $('expenseRows').innerHTML='<table><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th></th></tr>'+expenses.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.category)}</td><td>${esc(x.description)}</td><td>${money(x.amount)}</td><td><button class="danger" onclick="removeExpense('${x.id}')">Delete</button></td></tr>`).join('')+'</table>';
+ let groups={};expenses.forEach(x=>groups[x.category]=(groups[x.category]||0)+Number(x.amount));
+ $('expenseTotals').innerHTML='<table><tr><th>Category</th><th>Total</th></tr>'+Object.entries(groups).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${money(v)}</td></tr>`).join('')+'</table>';$('expenseGrand').textContent=money(expenses.reduce((s,x)=>s+Number(x.amount),0));
+ $('savingRows').innerHTML='<table><tr><th>Date</th><th>Name</th><th>Type</th><th>Bank / ISP</th><th>Amount</th><th></th></tr>'+savings.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.name)}</td><td>${esc(x.type)}</td><td>${esc(x.provider)}</td><td>${money(x.amount)}</td><td><button class="danger" onclick="removeSaving('${x.id}')">Delete</button></td></tr>`).join('')+'</table>';
+ let net=savings.reduce((s,x)=>s+(x.type==='Deposit'?1:-1)*Number(x.amount),0);$('savingNet').textContent=money(net);$('dashSavings').textContent=money(net);
+ $('guarantorRows').innerHTML='<table><tr><th>Loan ID</th><th>Name</th><th>Phone</th><th>National ID</th><th>Relationship</th><th></th></tr>'+gs.map(x=>`<tr><td>${esc(x.loanId)}</td><td>${esc(x.name)}</td><td>${esc(x.phone)}</td><td>${esc(x.nin)}</td><td>${esc(x.relation)}</td><td><button class="danger" onclick="removeGuarantor('${x.id}')">Delete</button></td></tr>`).join('')+'</table>';
+ $('loanOptions').innerHTML=db.loans.map(l=>`<option value="${esc(l.id)}">`).join('');
+ $('dashInterest').textContent=money(db.loans.reduce((s,l)=>s+loanCalc(l).interest,0));$('dashExpenses').textContent=money(expenses.reduce((s,x)=>s+Number(x.amount),0));
+}
+function drawBars(canvasId,labels,values,title){let c=$(canvasId);if(!c)return;let ctx=c.getContext('2d'),w=c.clientWidth||600,h=220;c.width=w*devicePixelRatio;c.height=h*devicePixelRatio;ctx.scale(devicePixelRatio,devicePixelRatio);ctx.clearRect(0,0,w,h);let max=Math.max(1,...values),left=36,bottom=190,usable=w-left-12,bar=Math.max(8,usable/(values.length*1.7));ctx.font='11px Arial';ctx.fillStyle='#344054';ctx.fillText(title,8,15);values.forEach((v,i)=>{let x=left+i*(usable/Math.max(1,values.length))+(usable/Math.max(1,values.length)-bar)/2,hh=(v/max)*145;ctx.fillStyle='#16834a';ctx.fillRect(x,bottom-hh,bar,hh);ctx.fillStyle='#344054';ctx.fillText(String(v),x,bottom-hh-5);ctx.save();ctx.translate(x+bar/2,bottom+8);ctx.rotate(-.35);ctx.fillText(labels[i],0,0);ctx.restore()})}
+function drawDashboard(){let months=[];for(let i=5;i>=0;i--){let d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);months.push(d.toISOString().slice(0,7))}let mc=months.map(m=>db.members.filter(x=>x.date.startsWith(m)).length),lc=months.map(m=>db.loans.filter(x=>x.issueDate.startsWith(m)).length);drawBars('memberChart',months,mc,'New members by month');drawBars('loanChart',months,lc,'Loans issued by month')}
+function makeReport(){let month=$('reportMonth').value;if(!month){alert('Select reporting month');return}let newMembers=db.members.filter(x=>x.date.startsWith(month)),issued=db.loans.filter(x=>x.issueDate.startsWith(month)),repays=db.repayments.filter(x=>x.date.startsWith(month)),exps=db.expenses.filter(x=>x.date.startsWith(month));let interest=issued.reduce((s,l)=>s+loanCalc(l).interest,0),loanValue=issued.reduce((s,l)=>s+Number(l.amount),0),paid=repays.reduce((s,r)=>s+Number(r.amount),0),expenses=exps.reduce((s,x)=>s+Number(x.amount),0),defaults=db.loans.filter(l=>l.dueDate.startsWith(month)&&loanCalc(l).status==='Default');$('reportOutput').innerHTML=`<h3>COFISEE MICROFINANCE — NAMULANDA BRANCH</h3><p><b>Reporting month:</b> ${esc(month)}</p><table><tr><th>Indicator</th><th>Result</th></tr><tr><td>New members registered</td><td>${newMembers.length}</td></tr><tr><td>Loans issued</td><td>${issued.length}</td></tr><tr><td>Total loan principal issued</td><td>${money(loanValue)}</td></tr><tr><td>Expected interest at 20% on loans issued</td><td>${money(interest)}</td></tr><tr><td>Repayments received</td><td>${money(paid)}</td></tr><tr><td>Expenses</td><td>${money(expenses)}</td></tr><tr><td>Defaulted loans due in month</td><td>${defaults.length}</td></tr><tr><td>Outstanding portfolio (all loans)</td><td>${money(db.loans.reduce((s,l)=>s+loanCalc(l).balance,0))}</td></tr></table><p><b>Note:</b> Interest shown is the calculated 20% expected interest on loans issued in the selected month, not necessarily cash interest collected.</p>`}
+function showLoanPortal(){let id=$('portalLoanId').value.trim(),l=db.loans.find(x=>x.id.toLowerCase()===id.toLowerCase());if(!id){$('portalResult').innerHTML='';return}if(!l){$('portalResult').textContent='No matching loan found.';return}let c=loanCalc(l),member=db.members.find(m=>m.id===l.memberId);let installments=Array.from({length:4},(_,i)=>({n:i+1,date:dateAdd(l.issueDate,(i+1)*7),amount:c.total/4}));$('portalResult').innerHTML=`<h3>${esc(l.id)} — ${esc(l.name)}</h3><p>Principal: ${money(l.amount)} | Interest: ${money(c.interest)} | Total: ${money(c.total)} | Paid: ${money(c.paid)} | Balance: <b>${money(c.balance)}</b> | Status: ${statusTag(c.status)}</p><h3>Four-week amortization schedule</h3><p class="muted">Illustrative equal installments for a one-month (28-day) term. Amounts are rounded to whole UGX; final installment adjusts any rounding difference.</p><table><tr><th>Installment</th><th>Due date</th><th>Scheduled amount</th></tr>${installments.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.date)}</td><td>${money(i===3?c.total-(Math.round(c.total/4)*3):Math.round(c.total/4))}</td></tr>`).join('')}</table>`}
+window.removeExpense=id=>{if(confirm('Delete expense?')){db.expenses=db.expenses.filter(x=>x.id!==id);save();renderExtras()}};
+window.removeSaving=id=>{if(confirm('Delete transaction?')){db.savings=db.savings.filter(x=>x.id!==id);save();renderExtras()}};
+window.removeGuarantor=id=>{if(confirm('Delete guarantor?')){db.guarantors=db.guarantors.filter(x=>x.id!==id);save();renderExtras()}};
+$('expenseForm').addEventListener('submit',e=>{e.preventDefault();db.expenses.push({id:'EXP'+Date.now(),amount:Number($('expenseAmount').value),category:$('expenseCategory').value.trim(),date:fmtDate(),description:$('expenseDescription').value.trim()});e.target.reset();$('expenseDate').value=fmtDate();save();renderExtras()});
+$('savingForm').addEventListener('submit',e=>{e.preventDefault();db.savings.push({id:'SAV'+Date.now(),name:$('savingName').value.trim(),amount:Number($('savingAmount').value),type:$('savingType').value,provider:$('savingProvider').value.trim(),date:fmtDate()});e.target.reset();save();renderExtras()});
+$('guarantorForm').addEventListener('submit',e=>{e.preventDefault();let loanId=$('guarantorLoan').value.trim();if(!db.loans.some(l=>l.id===loanId)){alert('Enter a valid Loan ID from the loans register.');return}db.guarantors.push({id:'GUA'+Date.now(),loanId,name:$('guarantorName').value.trim(),phone:$('guarantorPhone').value.trim(),nin:$('guarantorNin').value.trim(),relation:$('guarantorRelation').value.trim()});e.target.reset();save();renderExtras()});
+$('runReport').onclick=makeReport;$('portalLoanId').addEventListener('input',showLoanPortal);
+const originalRender=render;render=function(){originalRender();renderExtras();drawDashboard()};
+$('reportMonth').value=fmtDate().slice(0,7);if($('reportIssueDate'))$('reportIssueDate').value=today();render();
+
+
+// COFISEE enhancement layer: cashbook, profitability, defaulters and downloadable reports.
+db.cashbook=db.cashbook||[];
+db.openingCash=Number(db.openingCash||0);
+function cashPosition(){return db.openingCash+db.cashbook.reduce((v,x)=>v+(x.type==='Cash In'?1:-1)*Number(x.amount||0),0)}
+function netSavings(){return db.savings.reduce((v,x)=>v+(x.type==='Deposit'?1:-1)*Number(x.amount||0),0)}
+function interestCollected(){return db.repayments.reduce((v,r)=>{let l=db.loans.find(x=>x.id===r.loanId);if(!l)return v;let c=loanCalc(l);return v+Number(r.amount)*(c.interest/(c.total||1));},0)}
+function netProfit(){return interestCollected()-db.expenses.reduce((v,x)=>v+Number(x.amount||0),0)}
+function portfolioBalance(){return db.loans.reduce((v,l)=>v+loanCalc(l).balance,0)}
+function combinedPosition(){return netSavings()+portfolioBalance()+cashPosition()}
+function renderFinanceExtras(){
+ const cash=cashPosition(), savings=netSavings(), profit=netProfit(), grand=combinedPosition();
+ ['dashCash','dashCash2'].forEach(id=>{if($(id))$(id).textContent=money(cash)});
+ ['dashProfit','dashProfit2'].forEach(id=>{if($(id))$(id).textContent=money(profit)});
+ ['dashNetSavings'].forEach(id=>{if($(id))$(id).textContent=money(savings)});
+ ['dashGrand','dashGrand2'].forEach(id=>{if($(id))$(id).textContent=money(grand)});
+ if($('openingCash'))$('openingCash').value=db.openingCash;
+ if($('cashPositionDisplay'))$('cashPositionDisplay').value=money(cash);
+ if($('cashDate')&&!$('cashDate').value)$('cashDate').value=today();
+ if($('cashbookRows'))$('cashbookRows').innerHTML='<table><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Amount</th><th>Action</th></tr>'+db.cashbook.slice().reverse().map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.type)}</td><td>${esc(x.category)}</td><td>${esc(x.description||'')}</td><td>${money(x.amount)}</td><td><button class="danger" onclick="deleteCashEntry('${x.id}')">Delete</button></td></tr>`).join('')+'</table>';
+ if($('defaulterRows')){
+  let q=($('defaulterSearch')?.value||'').toLowerCase();
+  let rows=db.loans.filter(l=>loanCalc(l).status==='Default').filter(l=>{let m=db.members.find(x=>x.id===l.memberId);return (l.id+l.name+(m?.phone||'')).toLowerCase().includes(q)});
+  $('defaulterRows').innerHTML='<table><tr><th>No.</th><th>Loan ID</th><th>Member</th><th>Phone</th><th>Due date</th><th>Outstanding</th><th>Days overdue</th></tr>'+rows.map((l,i)=>{let m=db.members.find(x=>x.id===l.memberId),c=loanCalc(l),days=Math.max(0,Math.floor((new Date(today())-new Date(l.dueDate))/86400000));return `<tr><td>${i+1}</td><td>${esc(l.id)}</td><td>${esc(l.name)}</td><td>${esc(m?.phone||'')}</td><td>${esc(l.dueDate)}</td><td>${money(c.balance)}</td><td>${days}</td></tr>`}).join('')+'</table>';
+ }
+}
+window.deleteCashEntry=id=>{if(confirm('Delete this cashbook entry?')){db.cashbook=db.cashbook.filter(x=>x.id!==id);save();renderFinanceExtras()}};
+
+
+$('defaulterSearch')?.addEventListener('input',renderFinanceExtras);
+$('dailyPaymentDate')?.addEventListener('change',renderDailyHistory);
+function renderDailyHistory(){
+ let date=$('dailyPaymentDate')?.value||today(),rows=db.repayments.filter(r=>r.date===date);
+ $('dailyHistory').innerHTML='<table><tr><th>Receipt</th><th>Member</th><th>Loan ID</th><th>Date</th><th>Amount paid</th></tr>'+rows.map(r=>`<tr><td>${esc(r.id)}</td><td>${esc(r.name)}</td><td>${esc(r.loanId)}</td><td>${esc(r.date)}</td><td>${money(r.amount)}</td></tr>`).join('')+`<tr><th colspan="4">Daily total</th><th>${money(rows.reduce((a,r)=>a+Number(r.amount),0))}</th></tr></table>`;
+}
+function downloadReport(){
+ let month=$('reportMonth').value;if(!month){alert('Select reporting month first.');return}
+ let rows=[['COFISEE MICROFINANCE — MANAGEMENT REPORT',month],['Indicator','Value'],
+ ['New members',db.members.filter(x=>x.date.startsWith(month)).length],
+ ['Loans issued',db.loans.filter(x=>x.issueDate.startsWith(month)).length],
+ ['Principal issued',db.loans.filter(x=>x.issueDate.startsWith(month)).reduce((a,l)=>a+Number(l.amount),0)],
+ ['Repayments received',db.repayments.filter(x=>x.date.startsWith(month)).reduce((a,r)=>a+Number(r.amount),0)],
+ ['Expenses',db.expenses.filter(x=>x.date.startsWith(month)).reduce((a,x)=>a+Number(x.amount),0)],
+ ['Interest collected (estimated allocation)',interestCollected()],
+ ['Net profit (interest collected less expenses)',netProfit()],
+ ['Net savings',netSavings()],['Portfolio balance',portfolioBalance()],['Cash position',cashPosition()],['Combined position',combinedPosition()]];
+ let csv=rows.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ let blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='COFISEE_Report_'+month+'.csv';a.click();URL.revokeObjectURL(url);
+}
+const reportActions=$('runReport')?.parentElement;
+if(reportActions&&!$('downloadReport')){let b=document.createElement('button');b.id='downloadReport';b.type='button';b.textContent='Download report (CSV)';b.className='secondary';b.onclick=downloadReport;reportActions.appendChild(b)}
+const baseRender=render;
+render=function(){baseRender();renderFinanceExtras();renderDailyHistory()};
+$('portalLoanId')?.addEventListener('input',()=>{showLoanPortal();let term=$('portalLoanId').value.trim().toLowerCase();if(term){let hits=db.repayments.filter(r=>r.loanId.toLowerCase().includes(term)||r.name.toLowerCase().includes(term));if(hits.length)$('portalResult').innerHTML+='<h3>Payment history</h3><table><tr><th>Date</th><th>Receipt</th><th>Amount</th></tr>'+hits.map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.id)}</td><td>${money(r.amount)}</td></tr>`).join('')+'</table>'}});
+render();
+
+
+// V4 management controls and reporting
+(function(){
+ const style=document.createElement('style');style.textContent=`:root{--navy:#123d2b;--blue:#16834a;--green:#16834a}header{background:linear-gradient(120deg,#0c3925,#16834a)}.tab.active{background:#16834a;border-color:#16834a}.stat strong{color:#12643a}.card{border-top:3px solid #d6eadc} @media print{.daily-sheet{break-before:page;page-break-before:always}.daily-sheet:first-child{break-before:auto;page-break-before:auto}.no-print{display:none!important}} .daily-sheet{padding:12px;border:1px solid #dce4ec;margin:12px 0;border-radius:8px}`;document.head.appendChild(style);
+ const addText=(id,v)=>{if($(id))$(id).textContent=v};
+ function monthOf(date){return String(date||'').slice(0,7)}
+ function monthlyInterestCollected(month){return db.repayments.filter(r=>monthOf(r.date)===month).reduce((sum,r)=>{let l=db.loans.find(x=>x.id===r.loanId);if(!l)return sum;let interest=Number(l.amount)*.2,total=Number(l.amount)+interest;return sum+Number(r.amount)*(interest/(total||1));},0)}
+ function balanceAtMonthEnd(month){let end=month+'-31';return db.loans.filter(l=>l.issueDate<=end).reduce((sum,l)=>{let paid=db.repayments.filter(r=>r.loanId===l.id&&r.date<=end).reduce((a,r)=>a+Number(r.amount),0);return sum+Math.max(0,Number(l.amount)*1.2-paid)},0)}
+ function principalPortfolioAtMonthEnd(month){let end=month+'-31';return db.loans.filter(l=>l.issueDate<=end).reduce((sum,l)=>sum+Number(l.amount)*1.2,0)}
+ function renderMonthlyDefaulters(){if(!$('defaulterRows'))return;let month=$('defaulterMonth')?.value||today().slice(0,7),q=($('defaulterSearch')?.value||'').toLowerCase();let rows=db.loans.filter(l=>monthOf(l.dueDate)===month&&loanCalc(l).balance>0&&l.dueDate<today()).filter(l=>{let m=db.members.find(x=>x.id===l.memberId);return(l.id+l.name+(m?.phone||'')).toLowerCase().includes(q)});$('defaulterRows').innerHTML='<table><tr><th>No.</th><th>Loan ID</th><th>Member</th><th>Phone</th><th>Due date</th><th>Outstanding</th><th>Overdue days</th></tr>'+rows.map((l,i)=>{let m=db.members.find(x=>x.id===l.memberId),c=loanCalc(l),days=Math.max(0,Math.floor((new Date(today())-new Date(l.dueDate))/86400000));return `<tr><td>${i+1}</td><td>${esc(l.id)}</td><td>${esc(l.name)}</td><td>${esc(m?.phone||'')}</td><td>${esc(l.dueDate)}</td><td>${money(c.balance)}</td><td>${days}</td></tr>`}).join('')+`<tr><th colspan="5">Monthly defaulters total</th><th>${money(rows.reduce((a,l)=>a+loanCalc(l).balance,0))}</th><th>${rows.length} loans</th></tr></table>`+(rows.length?'':'<p class="muted">No defaulters found for this month.</p>')}
+ function renderAmortization(){if(!$('amortResults'))return;let q=($('amortSearch')?.value||'').trim().toLowerCase();let loans=db.loans.filter(l=>loanCalc(l).balance>0&&(!q||(l.name+' '+l.id).toLowerCase().includes(q)));$('amortResults').innerHTML=loans.map(l=>{let c=loanCalc(l),weeks=Math.max(1,Math.ceil(Number(l.term||28)/7)),weekly=Math.ceil(c.total/weeks),paid=0,rows='';for(let i=1;i<=weeks;i++){let due=dateAdd(l.issueDate,Math.min(i*7,Number(l.term||28))),scheduled=i===weeks?c.total-weekly*(weeks-1):weekly,paidThis=Math.min(scheduled,Math.max(0,c.paid-paid));paid+=scheduled;let status=paidThis>=scheduled?'Paid':(due<today()?'Overdue':'Pending');rows+=`<tr><td>${i}</td><td>${esc(due)}</td><td>${money(scheduled)}</td><td>${money(paidThis)}</td><td>${money(Math.max(0,scheduled-paidThis))}</td><td><span class="status ${status==='Paid'?'cleared':status==='Overdue'?'default':'pending'}">${status}</span></td></tr>`}let member=db.members.find(m=>m.id===l.memberId);return `<h3>${esc(l.name)} — ${esc(l.id)}</h3><p>Payable: ${money(c.total)} | Paid: ${money(c.paid)} | Remaining: <b>${money(c.balance)}</b> | Completion: ${Math.round((c.paid/(c.total||1))*100)}%</p><table><tr><th>Week</th><th>Due date</th><th>Installment</th><th>Paid allocated</th><th>Remaining</th><th>Status</th></tr>${rows}</table>`}).join('')||'<p class="muted">No matching active loans. Search a member name or loan ID.</p>'}
+ // Daily ledger: each date is a separately paginated print section.
+ function renderDailyHistory(){if(!$('dailyHistory'))return;let days=[...new Set(db.repayments.map(r=>r.date))].sort();let chosen=$('dailyPaymentDate')?.value;if(chosen)days=days.filter(d=>d===chosen);$('dailyHistory').innerHTML=days.map(date=>{let rows=db.repayments.filter(r=>r.date===date);return `<section class="daily-sheet"><h3>COFISEE — Daily Collections: ${esc(date)}</h3><table><tr><th>Receipt</th><th>Member</th><th>Loan ID</th><th>Amount paid</th></tr>${rows.map(r=>`<tr><td>${esc(r.id)}</td><td>${esc(r.name)}</td><td>${esc(r.loanId)}</td><td>${money(r.amount)}</td></tr>`).join('')}<tr><th colspan="3">TOTAL COLLECTED</th><th>${money(rows.reduce((a,r)=>a+Number(r.amount),0))}</th></tr></table></section>`}).join('')||'<p class="muted">No payments recorded for the selected date.</p>';}
+ // Guarantor selected borrower determines the current loan ID automatically.
+ function updateGuarantorLoan(){let m=memberByName($('guaranteedMember')?.value||'');let l=m&&db.loans.filter(x=>x.memberId===m.id&&loanCalc(x).balance>0).sort((a,b)=>b.issueDate.localeCompare(a.issueDate))[0];if($('guarantorLoan'))$('guarantorLoan').value=l?l.id:''}
+ if($('guaranteedMember'))$('guaranteedMember').addEventListener('input',updateGuarantorLoan);
+ if($('guarantorForm'))$('guarantorForm').addEventListener('submit',e=>{updateGuarantorLoan();if(!$('guarantorLoan').value){e.preventDefault();e.stopImmediatePropagation();alert('The selected member has no uncleared loan. Issue a loan first.');}},true);
+ if($('defaulterMonth')){$('defaulterMonth').value=today().slice(0,7);$('defaulterMonth').addEventListener('change',renderMonthlyDefaulters)}$('dailyPaymentDate')?.addEventListener('change',renderDailyHistory);
+ $('defaulterSearch')?.addEventListener('input',renderMonthlyDefaulters);$('amortSearch')?.addEventListener('input',renderAmortization);
+ const dActions=$('dailyHistory')?.parentElement;if(dActions&&!$('printDailyLedger')){let b=document.createElement('button');b.id='printDailyLedger';b.className='secondary no-print';b.textContent='Print daily collection pages';b.onclick=()=>window.print();dActions.insertBefore(b,$('dailyHistory'))}
+ // Report content is divided into management sections and includes percentage remaining.
+ const oldMakeReport=makeReport;makeReport=function(){let month=$('reportMonth').value;if(!month)return oldMakeReport();oldMakeReport();let issued=db.loans.filter(l=>monthOf(l.issueDate)===month),repays=db.repayments.filter(r=>monthOf(r.date)===month),expenses=db.expenses.filter(x=>monthOf(x.date)===month).reduce((a,x)=>a+Number(x.amount),0),collections=repays.reduce((a,r)=>a+Number(r.amount),0),intCollected=monthlyInterestCollected(month),profit=intCollected-expenses,bal=balanceAtMonthEnd(month),portfolio=principalPortfolioAtMonthEnd(month),remainingPct=portfolio?bal/portfolio*100:0,active=db.loans.filter(l=>l.issueDate<=month+'-31'&&loanCalc(l).balance>0).length,cleared=db.loans.filter(l=>l.issueDate<=month+'-31'&&loanCalc(l).balance<=0).length,defaults=db.loans.filter(l=>monthOf(l.dueDate)===month&&l.dueDate<today()&&loanCalc(l).balance>0);let comments=esc($('adminComments')?.value||'');const monthLabel=new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1,1).toLocaleDateString('en-UG',{month:'long',year:'numeric'}),prepared=esc($('reportPreparedBy')?.value.trim()||'Not specified'),issueDate=esc($('reportIssueDate')?.value||today());$('reportOutput').innerHTML=`<div class="report-sheet"><div class="report-head"><h2>COFISEE MICROFINANCE</h2><h3>MONTHLY MANAGEMENT REPORT</h3><p><b>Branch:</b> Namulanda &nbsp; | &nbsp; <b>Reporting month:</b> ${esc(monthLabel)}</p><p><b>Prepared by:</b> ${prepared} &nbsp; | &nbsp; <b>Report issue date:</b> ${issueDate}</p></div><h3>1. Management Overview</h3><table><tr><th>Indicator</th><th>Result</th></tr><tr><td>New members</td><td>${db.members.filter(m=>monthOf(m.date)===month).length}</td></tr><tr><td>Loans issued</td><td>${issued.length}</td></tr><tr><td>Repayment transactions</td><td>${repays.length}</td></tr><tr><td>Cash collected</td><td>${money(collections)}</td></tr></table><h3>2. Portfolio Summary</h3><table><tr><th>Indicator</th><th>Result</th></tr><tr><td>Total payable portfolio issued up to month end</td><td>${money(portfolio)}</td></tr><tr><td>Outstanding portfolio at month end</td><td>${money(bal)}</td></tr><tr><td>Remaining balance percentage</td><td><b>${remainingPct.toFixed(2)}%</b></td></tr><tr><td>Active loans</td><td>${active}</td></tr><tr><td>Cleared loans</td><td>${cleared}</td></tr><tr><td>Defaulters due in month</td><td>${defaults.length}</td></tr></table><h3>3. Monthly Income & Expenditure</h3><table><tr><th>Indicator</th><th>Amount</th></tr><tr><td>Interest collected (estimated allocation)</td><td>${money(intCollected)}</td></tr><tr><td>Operating expenses</td><td>${money(expenses)}</td></tr><tr class="profit-line"><td><b>Monthly net profit</b></td><td><b>${money(profit)}</b></td></tr></table><h3>4. Daily Collections Summary</h3><table><tr><th>Date</th><th>Transactions</th><th>Total collected</th></tr>${[...new Set(repays.map(r=>r.date))].sort().map(d=>{let rr=repays.filter(r=>r.date===d);return `<tr><td>${esc(d)}</td><td>${rr.length}</td><td>${money(rr.reduce((a,r)=>a+Number(r.amount),0))}</td></tr>`}).join('')}</table><h3>5. Management & Administrator Comments</h3><p>${comments||'No administrator comments entered.'}</p><p class="muted">Net profit uses estimated interest allocation from repayments less expenses recorded for the selected month. Portfolio is calculated from loans issued and repayments recorded up to month end.</p></div>`;};
+ // Extend CSV export with portfolio ratios and comments.
+ const oldDownload=downloadReport;downloadReport=function(){let month=$('reportMonth').value;if(!month)return oldDownload();let bal=balanceAtMonthEnd(month),port=principalPortfolioAtMonthEnd(month),profit=monthlyInterestCollected(month)-db.expenses.filter(x=>monthOf(x.date)===month).reduce((a,x)=>a+Number(x.amount),0);let monthLabel=new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1,1).toLocaleDateString('en-UG',{month:'long',year:'numeric'});let rows=[['COFISEE MICROFINANCE MONTHLY REPORT',monthLabel],['Prepared by',$('reportPreparedBy')?.value||'Not specified'],['Report issue date',$('reportIssueDate')?.value||today()],['Monthly net profit UGX',profit],['Portfolio balance UGX',bal],['Portfolio total payable UGX',port],['Remaining balance %',port?(bal/port*100).toFixed(2):'0'],['Admin comments',$('adminComments')?.value||'']];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');let blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='COFISEE_Management_Report_'+month+'.csv';a.click();URL.revokeObjectURL(url)};
+ if($('runReport'))$('runReport').onclick=makeReport;if($('downloadReport'))$('downloadReport').onclick=downloadReport;
+ const oldRenderFinance=renderFinanceExtras;renderFinanceExtras=function(){oldRenderFinance();renderMonthlyDefaulters();renderAmortization()};
+ const oldRenderDaily=window.renderDailyHistory;window.renderDailyHistory=renderDailyHistory;
+ // Print a complete daily ledger by default; date picker filters to one day.
+ renderDailyHistory();renderMonthlyDefaulters();renderAmortization();updateGuarantorLoan();
+})();
+
+
+// V5 reporting and export enhancements
+(function(){
+ const csvCell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+ function exportCSV(filename,rows){
+   const csv=rows.map(row=>row.map(csvCell).join(',')).join('\r\n');
+   const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+   const url=URL.createObjectURL(blob),a=document.createElement('a');
+   a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }
+ function monthEnd(m){let [y,mo]=m.split('-').map(Number);return new Date(y,mo,0).toISOString().slice(0,10)}
+ function earnedInterestForLoan(l,asAt='9999-12-31'){
+   const interest=Number(l.amount)*.20,total=Number(l.amount)+interest;
+   const paid=db.repayments.filter(r=>r.loanId===l.id&&r.date<=asAt).reduce((a,r)=>a+Number(r.amount),0);
+   return total?Math.min(interest,paid*(interest/total)):0;
+ }
+ function activeMember(m,asAt='9999-12-31'){
+   return db.loans.some(l=>l.memberId===m.id&&l.issueDate<=asAt&&loanCalcAt(l,asAt).balance>0);
+ }
+ function loanCalcAt(l,asAt){
+   const paid=db.repayments.filter(r=>r.loanId===l.id&&r.date<=asAt).reduce((a,r)=>a+Number(r.amount),0);
+   const total=Number(l.amount)*1.2;
+   return {balance:Math.max(0,total-paid)};
+ }
+ function reportRows(){
+   const month=$('reportMonth')?.value||today().slice(0,7),end=monthEnd(month);
+   const issued=db.loans.filter(l=>l.issueDate<=end);
+   const activeLoans=issued.filter(l=>loanCalcAt(l,end).balance>0).length;
+   const clearedLoans=issued.filter(l=>loanCalcAt(l,end).balance<=0).length;
+   const activeMembers=db.members.filter(m=>activeMember(m,end)).length;
+   const dormantMembers=db.members.length-activeMembers;
+   const remaining=issued.reduce((a,l)=>a+loanCalcAt(l,end).balance,0);
+   const interestEarned=issued.reduce((a,l)=>a+earnedInterestForLoan(l,end),0);
+   const monthIssued=db.loans.filter(l=>l.issueDate.startsWith(month));
+   const monthPaid=db.repayments.filter(r=>r.date.startsWith(month)).reduce((a,r)=>a+Number(r.amount),0);
+   const monthExpenses=db.expenses.filter(x=>x.date.startsWith(month)).reduce((a,x)=>a+Number(x.amount),0);
+   const monthInterest=db.repayments.filter(r=>r.date.startsWith(month)).reduce((sum,r)=>{const l=db.loans.find(x=>x.id===r.loanId);if(!l)return sum;const interest=Number(l.amount)*.20,total=Number(l.amount)+interest;return sum+Number(r.amount)*(interest/(total||1));},0);
+   return [
+    ['COFISEE MICROFINANCE — MANAGEMENT REPORT',month],['Indicator','Result'],
+    ['Total remaining balance on loans issued (UGX)',remaining],
+    ['Interest earned / collected to date (UGX)',Math.round(interestEarned)],
+    ['Cleared loans',clearedLoans],['Active loans',activeLoans],
+    ['Dormant members (no outstanding loan)',dormantMembers],
+    ['Active members (with outstanding loan)',activeMembers],
+    ['Total registered members',db.members.length],
+    ['Loans issued during reporting month',monthIssued.length],
+    ['Principal issued during reporting month (UGX)',monthIssued.reduce((a,l)=>a+Number(l.amount),0)],
+    ['Repayments received during reporting month (UGX)',monthPaid],
+    ['Expenses during reporting month (UGX)',monthExpenses],
+    ['Estimated interest collected during reporting month (UGX)',Math.round(monthInterest)],
+    ['Estimated monthly net profit (UGX)',Math.round(monthInterest-monthExpenses)]
+   ];
+ }
+ function enhanceReport(){
+   if(!$('reportOutput'))return;
+   const month=$('reportMonth')?.value||today().slice(0,7),rows=reportRows();
+   const table='<div class="report-sheet"><div class="report-head"><h2>COFISEE MICROFINANCE</h2><h3>MANAGEMENT REPORT</h3><p>Branch: Namulanda | Reporting month: '+esc(month)+'</p></div><table>'+rows.slice(1).map((r,i)=>'<tr><td>'+esc(r[0])+'</td><td><b>'+esc(i===0?'':(typeof r[1]==='number'&&i!==2&&i!==3&&i!==4&&i!==5&&i!==6?r[1].toLocaleString('en-UG'):r[1]))+'</b></td></tr>').join('')+'</table><p class="muted">Active members are members with at least one outstanding loan. Dormant members are registered members without an outstanding loan. Interest earned is estimated as the interest portion of repayments received.</p></div>';
+   $('reportOutput').innerHTML=table;
+ }
+ // Put a dedicated export button beside each requested portal.
+ function addExportButton(parentId,id,label,handler){
+   const parent=$(parentId);if(!parent||$(id))return;
+   const b=document.createElement('button');b.type='button';b.id=id;b.className='secondary no-print';b.textContent=label;b.style.margin='8px 0';b.onclick=handler;
+   parent.insertBefore(b,parent.firstChild);
+ }
+ function exportReport(){const month=$('reportMonth')?.value||today().slice(0,7);exportCSV('COFISEE_Report_'+month+'.csv',reportRows())}
+ function exportAmortization(){
+   const q=($('amortSearch')?.value||'').trim().toLowerCase(),rows=[['Member','Loan ID','Week','Due date','Installment (UGX)','Paid allocated (UGX)','Remaining installment (UGX)','Status']];
+   db.loans.filter(l=>loanCalc(l).balance>0&&(!q||(l.name+' '+l.id).toLowerCase().includes(q))).forEach(l=>{
+    const c=loanCalc(l),weeks=Math.max(1,Math.ceil(Number(l.term||28)/7)),weekly=Math.ceil(c.total/weeks);let allocated=0;
+    for(let i=1;i<=weeks;i++){const due=dateAdd(l.issueDate,Math.min(i*7,Number(l.term||28))),scheduled=i===weeks?c.total-weekly*(weeks-1):weekly,paid=Math.min(scheduled,Math.max(0,c.paid-allocated));allocated+=scheduled;rows.push([l.name,l.id,i,due,scheduled,paid,Math.max(0,scheduled-paid),paid>=scheduled?'Paid':due<today()?'Overdue':'Pending'])}
+   });
+   exportCSV('COFISEE_Amortization.csv',rows);
+ }
+ function exportDefaulters(){
+   const month=$('defaulterMonth')?.value||today().slice(0,7),q=($('defaulterSearch')?.value||'').toLowerCase();
+   const rows=[['No.','Loan ID','Member','Phone','Due date','Outstanding (UGX)','Days overdue']];
+   db.loans.filter(l=>l.dueDate.startsWith(month)&&l.dueDate<today()&&loanCalc(l).balance>0).filter(l=>{const m=db.members.find(x=>x.id===l.memberId);return(l.id+l.name+(m?.phone||'')).toLowerCase().includes(q)}).forEach((l,i)=>{const m=db.members.find(x=>x.id===l.memberId);rows.push([i+1,l.id,l.name,m?.phone||'',l.dueDate,loanCalc(l).balance,Math.max(0,Math.floor((new Date(today())-new Date(l.dueDate))/86400000))])});
+   exportCSV('COFISEE_Defaulters_'+month+'.csv',rows);
+ }
+ function exportSearch(){
+   const q=($('portalLoanId')?.value||'').trim().toLowerCase();
+   const rows=[['Record type','Member','Loan ID','Date','Amount / balance (UGX)','Details']];
+   const loans=db.loans.filter(l=>!q||(l.id+' '+l.name+' '+(db.members.find(m=>m.id===l.memberId)?.phone||'')).toLowerCase().includes(q));
+   loans.forEach(l=>{const c=loanCalc(l);rows.push(['Loan',l.name,l.id,l.issueDate,c.balance,'Status: '+c.status+'; Principal: '+l.amount+'; Total payable: '+c.total+'; Paid: '+c.paid]);db.repayments.filter(r=>r.loanId===l.id).forEach(r=>rows.push(['Repayment',r.name,l.id,r.date,r.amount,'Receipt: '+r.id]))});
+   if(loans.length===0)rows.push(['No matching loan','','','','','']);
+   exportCSV('COFISEE_Loan_Search.csv',rows);
+ }
+ addExportButton('reports','exportReportV5','Download report (CSV)',exportReport);
+ addExportButton('amortization','exportAmortV5','Download amortization (CSV)',exportAmortization);
+ addExportButton('defaulters','exportDefaultersV5','Download defaulters (CSV)',exportDefaulters);
+ addExportButton('loanportal','exportSearchV5','Download search results (CSV)',exportSearch);
+ // Keep the report refreshed after the user selects a month or generates it.
+ if($('runReport'))$('runReport').addEventListener('click',()=>setTimeout(enhanceReport,0));
+ if($('reportMonth'))$('reportMonth').addEventListener('change',enhanceReport);
+ // Cashbook date is always today's date and cannot be manually changed.
+ if($('cashDate')){$('cashDate').readOnly=true;$('cashDate').value=today()}
+ const cashForm=$('cashbookForm');
+ if(cashForm)cashForm.addEventListener('submit',()=>{if($('cashDate'))$('cashDate').value=today()},true);
+ // Repaint report after all initial modules have loaded.
+ enhanceReport();
+})();
+
+(function(){
+  const $=id=>document.getElementById(id);
+  const money=v=>'UGX '+Math.round(Number(v)||0).toLocaleString('en-UG');
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const monthEnd=m=>{const [y,mo]=m.split('-').map(Number);return new Date(y,mo,0).getFullYear()+'-'+String(new Date(y,mo,0).getMonth()+1).padStart(2,'0')+'-'+String(new Date(y,mo,0).getDate()).padStart(2,'0')};
+  const asAt=(l,end)=>{const paid=db.repayments.filter(r=>r.loanId===l.id&&r.date<=end).reduce((s,r)=>s+Number(r.amount||0),0);const total=Number(l.amount||0)*1.2;return {paid,balance:Math.max(0,total-paid),total,interest:Number(l.amount||0)*.2};};
+  function renderDefaulters(){
+    const box=$('defaulterRows');if(!box)return;
+    const month=$('defaulterMonth')?.value||today().slice(0,7),q=($('defaulterSearch')?.value||'').trim().toLowerCase();
+    const rows=db.loans.filter(l=>String(l.dueDate||'').slice(0,7)===month&&l.dueDate<=today()&&loanCalc(l).balance>0).filter(l=>{const m=db.members.find(x=>x.id===l.memberId);return (l.id+' '+l.name+' '+(m?.phone||'')).toLowerCase().includes(q)}).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
+    box.innerHTML='<table><thead><tr><th>No.</th><th>Loan ID</th><th>Member</th><th>Phone</th><th>Issue date</th><th>Due date</th><th>Outstanding</th><th>Days overdue</th></tr></thead><tbody>'+rows.map((l,i)=>{const m=db.members.find(x=>x.id===l.memberId),days=Math.max(0,Math.floor((new Date(today()+'T00:00:00')-new Date(l.dueDate+'T00:00:00'))/86400000));return `<tr><td>${i+1}</td><td>${esc(l.id)}</td><td>${esc(l.name)}</td><td>${esc(m?.phone||'')}</td><td>${esc(l.issueDate)}</td><td>${esc(l.dueDate)}</td><td>${money(loanCalc(l).balance)}</td><td>${days}</td></tr>`}).join('')+`<tr><th colspan="6">TOTAL — ${rows.length} overdue loan(s)</th><th>${money(rows.reduce((s,l)=>s+loanCalc(l).balance,0))}</th><th></th></tr></tbody></table>`+(rows.length?'':'<p class="muted">No overdue loans were found for '+esc(month)+'. Check that the selected month is the loan due month and that the loan has an unpaid balance.</p>');
+  }
+  function renderAmortization(){
+    const box=$('amortResults');if(!box)return;
+    const q=($('amortSearch')?.value||'').trim().toLowerCase();
+    const loans=db.loans.filter(l=>!q||(l.name+' '+l.id+' '+(db.members.find(m=>m.id===l.memberId)?.phone||'')).toLowerCase().includes(q));
+    if(!loans.length){box.innerHTML='<p class="muted">No loan found. Search using the registered member name or exact loan ID.</p>';return;}
+    box.innerHTML=loans.map(l=>{const c=loanCalc(l),term=Math.max(1,Number(l.term||28)),weeks=Math.max(1,Math.ceil(term/7)),base=Math.floor(c.total/weeks);let rows='',cumScheduled=0,cumPaid=0;
+      for(let i=1;i<=weeks;i++){const scheduled=i===weeks?c.total-cumScheduled:base;cumScheduled+=scheduled;const paid=Math.min(scheduled,Math.max(0,c.paid-cumPaid));cumPaid+=paid;const due=dateAdd(l.issueDate,Math.min(i*7,term));const status=paid>=scheduled?'Paid':(due<today()?'Overdue':'Pending');rows+=`<tr><td>${i}</td><td>${esc(due)}</td><td>${money(scheduled)}</td><td>${money(paid)}</td><td>${money(Math.max(0,scheduled-paid))}</td><td><span class="status ${status==='Paid'?'cleared':status==='Overdue'?'default':'pending'}">${status}</span></td></tr>`;}
+      const m=db.members.find(x=>x.id===l.memberId);return `<div class="card"><h3>${esc(l.name)} — ${esc(l.id)}</h3><p>Principal: <b>${money(l.amount)}</b> | Interest (20% flat): <b>${money(c.interest)}</b> | Total payable: <b>${money(c.total)}</b></p><p>Paid: <b>${money(c.paid)}</b> | Remaining: <b>${money(c.balance)}</b> | Status: <b>${esc(c.status)}</b></p><div class="table-wrap"><table><thead><tr><th>Week</th><th>Due date</th><th>Installment</th><th>Paid allocated</th><th>Remaining installment</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    }).join('');
+  }
+  function renderEnhancedReport(){
+    const out=$('reportOutput'),month=$('reportMonth')?.value;if(!out||!month){if(out)out.innerHTML='<p class="muted">Select a reporting month, then press Generate report.</p>';return;}
+    const end=monthEnd(month),issued=db.loans.filter(l=>l.issueDate<=end),monthlyLoans=issued.filter(l=>l.issueDate.slice(0,7)===month),repays=db.repayments.filter(r=>r.date>=month+'-01'&&r.date<=end),expenses=db.expenses.filter(x=>x.date>=month+'-01'&&x.date<=end),cashIn=repays.reduce((s,r)=>s+Number(r.amount||0),0),expenseTotal=expenses.reduce((s,x)=>s+Number(x.amount||0),0);
+    const calc=issued.map(l=>({l,c:asAt(l,end)})),remaining=calc.reduce((s,x)=>s+x.c.balance,0),principal=issued.reduce((s,l)=>s+Number(l.amount||0),0),interestExpected=issued.reduce((s,l)=>s+Number(l.amount||0)*.2,0),interestCollected=calc.reduce((s,x)=>s+Math.min(x.c.interest,x.c.paid*(x.c.interest/(x.c.total||1))),0),activeLoans=calc.filter(x=>x.c.balance>0).length,cleared=calc.filter(x=>x.c.balance<=0).length,defaulters=issued.filter(l=>l.dueDate<=end&&l.dueDate<=today()&&asAt(l,end).balance>0),activeMembers=db.members.filter(m=>issued.some(l=>l.memberId===m.id&&asAt(l,end).balance>0)).length,dormant=db.members.length-activeMembers,monthlyInterest=repays.reduce((s,r)=>{const l=db.loans.find(x=>x.id===r.loanId);if(!l)return s;const i=Number(l.amount)*.2,t=Number(l.amount)+i;return s+Number(r.amount||0)*(i/(t||1));},0),profit=monthlyInterest-expenseTotal;
+    const prepared=$('reportPreparedBy')?.value||'Not specified',issueDate=$('reportIssueDate')?.value||today(),label=new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1,1).toLocaleDateString('en-UG',{month:'long',year:'numeric'});
+    const metric=(name,val)=>`<tr><td>${name}</td><td><b>${val}</b></td></tr>`;
+    out.innerHTML=`<div class="report-sheet"><div class="report-head"><h2>COFISEE MICROFINANCE</h2><h3>MONTHLY MANAGEMENT & PORTFOLIO REPORT</h3><p><b>Branch:</b> Namulanda | <b>Period:</b> ${esc(label)}</p><p><b>Prepared by:</b> ${esc(prepared)} | <b>Report date:</b> ${esc(issueDate)}</p></div><h3>1. Management dashboard</h3><div class="stats">${[['Registered members',db.members.length],['Active members',activeMembers],['Dormant members',dormant],['Loans issued this month',monthlyLoans.length],['Active loans',activeLoans],['Cleared loans',cleared],['Overdue loans',defaulters.length],['Repayment transactions',repays.length]].map(x=>`<div class="stat"><small>${x[0]}</small><strong>${x[1]}</strong></div>`).join('')}</div><h3>2. Loan portfolio position as at ${esc(end)}</h3><table>${metric('Principal issued to date',money(principal))}${metric('Expected flat interest (20%)',money(interestExpected))}${metric('Total payable portfolio',money(principal+interestExpected))}${metric('Total remaining loan balance',money(remaining))}${metric('Portfolio collection rate',((principal+interestExpected)?((principal+interestExpected-remaining)/(principal+interestExpected)*100):0).toFixed(2)+'%')}${metric('Interest collected to date (estimated)',money(interestCollected))}</table><h3>3. Monthly performance</h3><table>${metric('New members registered',db.members.filter(m=>m.date?.slice(0,7)===month).length)}${metric('Loans issued this month',monthlyLoans.length)}${metric('Principal disbursed this month',money(monthlyLoans.reduce((s,l)=>s+Number(l.amount||0),0)))}${metric('Repayments collected this month',money(cashIn))}${metric('Estimated interest collected this month',money(monthlyInterest))}${metric('Operating expenses this month',money(expenseTotal))}${metric('Estimated net profit this month',money(profit))}</table><h3>4. Overdue loan watchlist</h3><div class="table-wrap"><table><tr><th>Loan ID</th><th>Member</th><th>Due date</th><th>Balance</th></tr>${defaulters.map(l=>`<tr><td>${esc(l.id)}</td><td>${esc(l.name)}</td><td>${esc(l.dueDate)}</td><td>${money(asAt(l,end).balance)}</td></tr>`).join('')||'<tr><td colspan="4">No overdue loans for this reporting period.</td></tr>'}</table></div><h3>5. Monthly expenses breakdown</h3><table><tr><th>Category</th><th>Transactions</th><th>Total (UGX)</th></tr>${[...new Set(expenses.map(x=>x.category||'Uncategorised'))].map(cat=>{const xs=expenses.filter(x=>(x.category||'Uncategorised')===cat);return `<tr><td>${esc(cat)}</td><td>${xs.length}</td><td>${money(xs.reduce((s,x)=>s+Number(x.amount||0),0))}</td></tr>`}).join('')||'<tr><td colspan="3">No expenses recorded.</td></tr>'}</table><h3>6. Management comments</h3><p>${esc($('adminComments')?.value||'No comments entered.')}</p><p class="muted">Interest and profit are estimates based on the system's 20% flat-interest loan rule and allocation of repayment amounts proportionally between principal and interest. Net profit shown is estimated interest collected in the month less recorded expenses; it is not a full audited profit-and-loss statement.</p></div>`;
+  }
+  // Replace earlier event handlers and repaint after data changes, search, month changes and tab opening.
+  if($('defaulterMonth')){$('defaulterMonth').value=$('defaulterMonth').value||today().slice(0,7);$('defaulterMonth').addEventListener('change',renderDefaulters);}
+  $('defaulterSearch')?.addEventListener('input',renderDefaulters);
+  $('amortSearch')?.addEventListener('input',renderAmortization);
+  if($('runReport'))$('runReport').onclick=renderEnhancedReport;
+  $('reportMonth')?.addEventListener('change',renderEnhancedReport);
+  document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{setTimeout(()=>{if(b.dataset.tab==='defaulters')renderDefaulters();if(b.dataset.tab==='amortization')renderAmortization();if(b.dataset.tab==='reports')renderEnhancedReport();},0)}));
+  const originalRender=render;render=function(){originalRender();renderDefaulters();renderAmortization();};
+  renderDefaulters();renderAmortization();
+  // Replace the old report export with all displayed management indicators.
+  const csvCell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  // Export exactly what is currently displayed in each form, including its active filters.
+  function exportDisplayedSection(sectionId,filename,title){
+    const root=$(sectionId);if(!root)return;
+    const rows=[[title],['Generated',today()]];
+    if(sectionId==='reports'){
+      rows.push(['Reporting month',$('reportMonth')?.value||today().slice(0,7)]);
+      root.querySelectorAll('#reportOutput .stats .stat').forEach(card=>rows.push([card.querySelector('small')?.textContent||'Indicator',card.querySelector('strong')?.textContent||'']));
+      root.querySelectorAll('#reportOutput h3').forEach(h=>rows.push([h.textContent]));
+      root.querySelectorAll('#reportOutput table').forEach(table=>table.querySelectorAll('tr').forEach(tr=>rows.push(Array.from(tr.querySelectorAll('th,td')).map(c=>c.innerText.trim()))));
+      rows.push(['Management comments',$('adminComments')?.value||'']);
+    }else{
+      const search=sectionId==='amortization'?$('amortSearch')?.value:sectionId==='defaulters'?$('defaulterSearch')?.value:$('portalLoanId')?.value;
+      if(search)rows.push(['Search filter',search]);
+      if(sectionId==='defaulters')rows.push(['Selected month',$('defaulterMonth')?.value||today().slice(0,7)]);
+      if(sectionId==='loanportal'){
+        ['portalResult','dailyHistory'].forEach(id=>{const node=$(id);if(node){rows.push([id==='portalResult'?'Loan search result':'Daily payment history']);node.querySelectorAll('table').forEach(t=>t.querySelectorAll('tr').forEach(tr=>rows.push(Array.from(tr.querySelectorAll('th,td')).map(c=>c.innerText.trim()))));}});
+      }else{
+        root.querySelectorAll('table').forEach(t=>t.querySelectorAll('tr').forEach(tr=>rows.push(Array.from(tr.querySelectorAll('th,td')).map(c=>c.innerText.trim()))));
+      }
+    }
+    const csv=rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
+    const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}));
+    const a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  if($('exportReportV5'))$('exportReportV5').onclick=()=>{renderEnhancedReport();exportDisplayedSection('reports','COFISEE_Report_'+($('reportMonth')?.value||today().slice(0,7))+'.csv','COFISEE MONTHLY MANAGEMENT REPORT')};
+  if($('exportAmortV5'))$('exportAmortV5').onclick=()=>exportDisplayedSection('amortization','COFISEE_Amortization.csv','COFISEE AMORTIZATION SCHEDULE');
+  if($('exportDefaultersV5'))$('exportDefaultersV5').onclick=()=>exportDisplayedSection('defaulters','COFISEE_Defaulters_'+($('defaulterMonth')?.value||today().slice(0,7))+'.csv','COFISEE DEFAULTERS LIST');
+  if($('exportSearchV5'))$('exportSearchV5').onclick=()=>exportDisplayedSection('loanportal','COFISEE_Loan_Search.csv','COFISEE LOAN SEARCH AND PAYMENT HISTORY');
+})();
+
+
+</script>
+
+<style>
+.report-sheet .report-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:12px 0}
+.report-sheet .report-kpi{border:1px solid #cfe8d8;border-radius:8px;padding:12px;background:#f6fbf7}
+.report-sheet .report-kpi small{display:block;color:#456b55;font-size:12px}
+.report-sheet .report-kpi strong{display:block;color:#116b3b;font-size:18px;margin-top:5px}
+.report-sheet .report-section{margin-top:22px}
+.report-sheet .report-note{font-size:12px;color:#53665a;background:#f5f7f5;padding:10px;border-radius:6px}
+.report-sheet .report-bar{height:9px;background:#e5eee8;border-radius:9px;overflow:hidden;min-width:90px}
+.report-sheet .report-bar span{display:block;height:100%;background:#16834a}
+.report-sheet table{width:100%;border-collapse:collapse;margin:8px 0}
+.report-sheet td,.report-sheet th{padding:8px;border:1px solid #d8e6dc;text-align:left}
+.report-sheet .amount{text-align:right;white-space:nowrap}
+@media print{body *{visibility:hidden!important}.report-sheet,.report-sheet *{visibility:visible!important}.report-sheet{position:absolute;left:0;top:0;width:100%;border:0!important}.report-sheet .no-print{display:none!important}}
+</style>
+<script>
+(function(){
+ const el=id=>document.getElementById(id);
+ const fmt=n=>'UGX '+Math.round(Number(n)||0).toLocaleString('en-UG');
+ const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const endOf=m=>{const [y,mo]=m.split('-').map(Number);return new Date(y,mo,0).getFullYear()+'-'+String(new Date(y,mo,0).getMonth()+1).padStart(2,'0')+'-'+String(new Date(y,mo,0).getDate()).padStart(2,'0')};
+ const sum=(xs,fn)=>xs.reduce((a,x)=>a+Number(fn(x)||0),0);
+ const paidAt=(l,end)=>sum(db.repayments.filter(r=>r.loanId===l.id&&r.date<=end),r=>r.amount);
+ const calcAt=(l,end)=>{const principal=Number(l.amount)||0,interest=Math.round(principal*.20),total=principal+interest,paid=paidAt(l,end);return {principal,interest,total,paid,balance:Math.max(0,total-paid),paidInterest:Math.min(interest,paid*(interest/(total||1)))}};
+ const monthLabel=m=>new Date(Number(m.slice(0,4)),Number(m.slice(5,7))-1,1).toLocaleDateString('en-UG',{month:'long',year:'numeric'});
+ function reportData(){
+  const month=el('reportMonth')?.value||new Date().toISOString().slice(0,7),end=endOf(month),start=month+'-01';
+  const loansToDate=db.loans.filter(l=>l.issueDate<=end),monthLoans=loansToDate.filter(l=>l.issueDate>=start&&l.issueDate<=end);
+  const payments=db.repayments.filter(r=>r.date>=start&&r.date<=end),monthExpenses=db.expenses.filter(x=>x.date>=start&&x.date<=end);
+  const portfolio=loansToDate.map(l=>({loan:l,...calcAt(l,end)}));
+  const membersToDate=db.members.filter(m=>m.date<=end);
+  const activeMembers=membersToDate.filter(m=>portfolio.some(x=>x.loan.memberId===m.id&&x.balance>0)).length;
+  const activeLoans=portfolio.filter(x=>x.balance>0),clearedLoans=portfolio.filter(x=>x.balance<=0);
+  const overdue=portfolio.filter(x=>x.loan.dueDate<=end&&x.balance>0).sort((a,b)=>a.loan.dueDate.localeCompare(b.loan.dueDate));
+  const repaymentTotal=sum(payments,r=>r.amount),interestMonth=sum(payments,r=>{const l=db.loans.find(x=>x.id===r.loanId);if(!l)return 0;const t=Number(l.amount||0)*1.2;return Number(r.amount||0)*(Number(l.amount||0)*.2/(t||1))});
+  const principalMonth=Math.max(0,repaymentTotal-interestMonth),expenseTotal=sum(monthExpenses,x=>x.amount);
+  const monthlyLoansTotal=sum(monthLoans,l=>l.amount),portfolioBalance=sum(portfolio,x=>x.balance),portfolioPayable=sum(portfolio,x=>x.total);
+  const cashEntries=(db.cashbook||[]).filter(x=>x.date>=start&&x.date<=end),cashIn=sum(cashEntries,x=>x.type==='Cash In'?x.amount:0),cashOut=sum(cashEntries,x=>x.type==='Cash Out'?x.amount:0);
+  const savings=(db.savings||[]).filter(x=>x.date>=start&&x.date<=end),deposits=sum(savings,x=>x.type==='Deposit'?x.amount:0),withdrawals=sum(savings,x=>x.type==='Withdrawal'?x.amount:0);
+  const categories=[...new Set(monthExpenses.map(x=>x.category||'Uncategorised'))].map(cat=>({cat,count:monthExpenses.filter(x=>(x.category||'Uncategorised')===cat).length,total:sum(monthExpenses.filter(x=>(x.category||'Uncategorised')===cat),x=>x.amount)})).sort((a,b)=>b.total-a.total);
+  const lastMonths=Array.from({length:6},(_,i)=>{const d=new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1-(5-i),1),m=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');const p=db.repayments.filter(r=>r.date.startsWith(m));const e=db.expenses.filter(x=>x.date.startsWith(m));return {month:m,repayments:sum(p,x=>x.amount),expenses:sum(e,x=>x.amount)}});
+  return {month,end,start,loansToDate,monthLoans,payments,monthExpenses,portfolio,membersToDate,activeMembers,activeLoans,clearedLoans,overdue,repaymentTotal,interestMonth,principalMonth,expenseTotal,monthlyLoansTotal,portfolioBalance,portfolioPayable,cashEntries,cashIn,cashOut,savings,deposits,withdrawals,categories,lastMonths,netEstimate:interestMonth-expenseTotal};
+ }
+ function renderReportV11(){
+  const out=el('reportOutput'),month=el('reportMonth')?.value;if(!out||!month)return;
+  const d=reportData(),prepared=el('reportPreparedBy')?.value||'Not specified',issue=el('reportIssueDate')?.value||new Date().toISOString().slice(0,10);
+  const metric=(a,b)=>`<tr><td>${safe(a)}</td><td class="amount"><b>${safe(b)}</b></td></tr>`;
+  const kpi=(a,b)=>`<div class="report-kpi"><small>${safe(a)}</small><strong>${safe(b)}</strong></div>`;
+  const table=(headers,rows)=>`<div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th>${safe(h)}</th>`).join('')}</tr></thead><tbody>${rows||`<tr><td colspan="${headers.length}">No records for this period.</td></tr>`}</tbody></table></div>`;
+  const comments=el('adminComments')?.value||'No management comments entered.';
+  const top=d.activeLoans.slice().sort((a,b)=>b.balance-a.balance).slice(0,10);
+  const defRows=d.overdue.map(x=>`<tr><td>${safe(x.loan.id)}</td><td>${safe(x.loan.name)}</td><td>${safe(x.loan.dueDate)}</td><td class="amount">${fmt(x.balance)}</td><td>${Math.max(0,Math.floor((new Date(d.end+'T00:00:00')-new Date(x.loan.dueDate+'T00:00:00'))/86400000))}</td></tr>`).join('');
+  const expRows=d.categories.map(x=>`<tr><td>${safe(x.cat)}</td><td>${x.count}</td><td class="amount">${fmt(x.total)}</td></tr>`).join('');
+  const topRows=top.map(x=>`<tr><td>${safe(x.loan.id)}</td><td>${safe(x.loan.name)}</td><td class="amount">${fmt(x.principal)}</td><td class="amount">${fmt(x.paid)}</td><td class="amount">${fmt(x.balance)}</td></tr>`).join('');
+  const trendRows=d.lastMonths.map(x=>`<tr><td>${safe(x.month)}</td><td class="amount">${fmt(x.repayments)}</td><td class="amount">${fmt(x.expenses)}</td><td class="amount">${fmt(x.repayments-x.expenses)}</td></tr>`).join('');
+  const portfolioPercent=d.portfolioPayable?Math.min(100,Math.max(0,(d.portfolioPayable-d.portfolioBalance)/d.portfolioPayable*100)):0;
+  out.innerHTML=`<div class="report-sheet">
+   <div class="report-head"><h2>COFISEE MICROFINANCE</h2><h3>MONTHLY MANAGEMENT REPORT</h3><p><b>Branch:</b> Namulanda &nbsp; | &nbsp; <b>Reporting period:</b> ${safe(monthLabel(month))}</p><p><b>Prepared by:</b> ${safe(prepared)} &nbsp; | &nbsp; <b>Report date:</b> ${safe(issue)}</p></div>
+   <div class="report-section"><h3>1. Executive summary</h3><div class="report-kpis">${kpi('Registered members at period end',d.membersToDate.length)}${kpi('Active borrowers',d.activeMembers)}${kpi('Outstanding loans',d.activeLoans.length)}${kpi('Overdue loans',d.overdue.length)}${kpi('Repayments received',fmt(d.repaymentTotal))}${kpi('Estimated net result',fmt(d.netEstimate))}</div><p><b>Management snapshot:</b> ${d.activeMembers} members had outstanding loans at month end. ${d.overdue.length} loan(s) were overdue at month end, with a combined outstanding balance of ${fmt(sum(d.overdue,x=>x.balance))}.</p></div>
+   <div class="report-section"><h3>2. Monthly financial performance</h3>${table(['Income / expenditure indicator','Amount'],[
+    metric('Loan principal disbursed during month',fmt(d.monthlyLoansTotal)),
+    metric('Repayments received during month',fmt(d.repaymentTotal)),
+    metric('Estimated principal portion of repayments',fmt(d.principalMonth)),
+    metric('Estimated interest portion of repayments',fmt(d.interestMonth)),
+    metric('Operating expenses recorded',fmt(d.expenseTotal)),
+    metric('Estimated net operating result (interest less expenses)',fmt(d.netEstimate))
+   ].join(''))}<p class="report-note">Net operating result is an estimate: interest is allocated proportionally from repayments under the system's 20% flat-interest rule, less expenses entered for this month. Principal disbursements and principal repayments are not treated as profit or expense. This is not an audited financial statement.</p></div>
+   <div class="report-section"><h3>3. Loan portfolio position at ${safe(d.end)}</h3>${table(['Portfolio indicator','Value'],[
+    metric('Loans issued up to period end',d.loansToDate.length),
+    metric('Principal originally issued',fmt(sum(d.portfolio,x=>x.principal))),
+    metric('Expected flat interest (20%)',fmt(sum(d.portfolio,x=>x.interest))),
+    metric('Total amount payable on loans issued',fmt(d.portfolioPayable)),
+    metric('Total collected on these loans by period end',fmt(sum(d.portfolio,x=>x.paid))),
+    metric('Outstanding portfolio balance',fmt(d.portfolioBalance)),
+    metric('Portfolio collection rate',portfolioPercent.toFixed(1)+'%'),
+    metric('Active / uncleared loans',d.activeLoans.length),
+    metric('Fully cleared loans',d.clearedLoans.length)
+   ].join(''))}<p>Collection progress <b>${portfolioPercent.toFixed(1)}%</b></p><div class="report-bar"><span style="width:${portfolioPercent.toFixed(1)}%"></span></div></div>
+   <div class="report-section"><h3>4. Membership performance</h3>${table(['Member indicator','Number'],[
+    metric('Total members registered by period end',d.membersToDate.length),
+    metric('New members registered this month',db.members.filter(m=>m.date>=d.start&&m.date<=d.end).length),
+    metric('Active borrowers (with outstanding loan)',d.activeMembers),
+    metric('Dormant / non-borrowing members',Math.max(0,d.membersToDate.length-d.activeMembers))
+   ].join(''))}</div>
+   <div class="report-section"><h3>5. Overdue loan watchlist at period end</h3>${table(['Loan ID','Member','Due date','Outstanding','Days overdue'],defRows)}</div>
+   <div class="report-section"><h3>6. Largest outstanding loan balances</h3>${table(['Loan ID','Member','Principal','Paid to date','Outstanding'],topRows)}</div>
+   <div class="report-section"><h3>7. Expense analysis</h3>${table(['Expense category','Transactions','Total'],expRows)}<p><b>Total monthly expenses:</b> ${fmt(d.expenseTotal)}</p></div>
+   <div class="report-section"><h3>8. Cashbook summary (separate cashbook entries)</h3>${table(['Cashbook movement','Amount'],[
+    metric('Cash In entered in cashbook',fmt(d.cashIn)),metric('Cash Out entered in cashbook',fmt(d.cashOut)),metric('Net cashbook movement',fmt(d.cashIn-d.cashOut)),metric('Number of cashbook entries',d.cashEntries.length)
+   ].join(''))}<p class="report-note">Cashbook figures include only entries recorded in the Cashbook form. Repayments and loan disbursements are not automatically added here. Avoid recording the same transaction twice.</p></div>
+   <div class="report-section"><h3>9. Savings activity</h3>${table(['Savings indicator','Amount'],[
+    metric('Deposits this month',fmt(d.deposits)),metric('Withdrawals this month',fmt(d.withdrawals)),metric('Net savings movement',fmt(d.deposits-d.withdrawals)),metric('Savings transactions',d.savings.length)
+   ].join(''))}</div>
+   <div class="report-section"><h3>10. Six-month activity trend</h3>${table(['Month','Repayments','Expenses','Repayments less expenses'],trendRows)}</div>
+   <div class="report-section"><h3>11. Management comments and action points</h3><p>${safe(comments).replace(/\n/g,'<br>')}</p></div>
+   <p class="report-note">Definitions: Active borrower means a member with at least one loan balance above zero at period end. Dormant / non-borrowing means registered by period end but with no outstanding loan. Overdue loans are loans whose due date was on or before the selected month end and still had an unpaid balance on that date. Historical figures are calculated using repayments dated on or before the selected month end.</p>
+  </div>`;
+ }
+ function exportReportV11(){
+  renderReportV11();
+  const root=el('reportOutput'),rows=[['COFISEE MICROFINANCE — MONTHLY MANAGEMENT REPORT'],['Reporting month',el('reportMonth')?.value||''],['Prepared by',el('reportPreparedBy')?.value||''],['Report date',el('reportIssueDate')?.value||'']];
+  root.querySelectorAll('h3').forEach(h=>rows.push([h.innerText]));
+  root.querySelectorAll('table').forEach(t=>t.querySelectorAll('tr').forEach(tr=>rows.push(Array.from(tr.querySelectorAll('th,td')).map(c=>c.innerText.trim()))));
+  rows.push(['Management comments',el('adminComments')?.value||'']);
+  const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'})),a=document.createElement('a');a.href=url;a.download='COFISEE_Enhanced_Report_'+(el('reportMonth')?.value||'period')+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }
+ if(el('reportMonth')){el('reportMonth').value=el('reportMonth').value||new Date().toISOString().slice(0,7);el('reportMonth').addEventListener('change',renderReportV11)}
+ if(el('runReport'))el('runReport').onclick=renderReportV11;
+ if(el('exportReportV5'))el('exportReportV5').onclick=exportReportV11;
+ if(el('adminComments'))el('adminComments').addEventListener('input',()=>{if(el('reportMonth')?.value)renderReportV11()});
+ renderReportV11();
+})();
+
+// Cashbook ledger enhancement V2
+let editingCashId=null;
+function cashbookLedgerRows(){
+ const ordered=(db.cashbook||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')||String(a.id).localeCompare(String(b.id)));
+ let balance=Number(db.openingCash||0);
+ return ordered.map(x=>{const amount=Number(x.amount||0);if(x.type==='Cash In')balance+=amount;else balance-=amount;return {...x,runningBalance:balance}});
+}
+function clearCashbookForm(){
+ editingCashId=null;
+ $('cashbookForm').reset();
+ $('cashDate').value=today();
+ $('cashSaveButton').textContent='Save cashbook entry';
+ $('cashbookFormTitle').textContent='Record cashbook transaction';
+ $('cashCancelEdit').style.display='none';
+}
+function renderFinanceExtras(){
+ const cash=cashPosition(), savings=netSavings(), profit=netProfit(), grand=combinedPosition();
+ ['dashCash','dashCash2'].forEach(id=>{if($(id))$(id).textContent=money(cash)});
+ ['dashProfit','dashProfit2'].forEach(id=>{if($(id))$(id).textContent=money(profit)});
+ if($('dashNetSavings'))$('dashNetSavings').textContent=money(savings);
+ ['dashGrand','dashGrand2'].forEach(id=>{if($(id))$(id).textContent=money(grand)});
+ if($('openingCash'))$('openingCash').value=db.openingCash;
+ if($('cashPositionDisplay'))$('cashPositionDisplay').value=money(cash);
+ if($('cashDate')&&!$('cashDate').value)$('cashDate').value=today();
+ const all=cashbookLedgerRows();
+ const incoming=all.filter(x=>x.type==='Cash In').reduce((a,x)=>a+Number(x.amount),0);
+ const outgoing=all.filter(x=>x.type==='Cash Out').reduce((a,x)=>a+Number(x.amount),0);
+ if($('cashbookInTotal'))$('cashbookInTotal').textContent=money(incoming);
+ if($('cashbookOutTotal'))$('cashbookOutTotal').textContent=money(outgoing);
+ if($('cashbookNetTotal'))$('cashbookNetTotal').textContent=money(incoming-outgoing);
+ if($('cashbookEntryCount'))$('cashbookEntryCount').textContent=all.length;
+ if($('cashbookRows')){
+  const q=($('cashSearch')?.value||'').toLowerCase().trim(),from=$('cashFromDate')?.value||'',to=$('cashToDate')?.value||'',type=$('cashFilterType')?.value||'';
+  const rows=all.filter(x=>(!q||[x.id,x.category,x.description,x.reference,x.date].join(' ').toLowerCase().includes(q))&&(!from||x.date>=from)&&(!to||x.date<=to)&&(!type||x.type===type)).reverse();
+  $('cashbookRows').innerHTML='<table><thead><tr><th>No.</th><th>Entry ID</th><th>Date</th><th>Type</th><th>Category</th><th>Reference</th><th>Narration</th><th>Cash In</th><th>Cash Out</th><th>Running balance</th><th class="no-print">Actions</th></tr></thead><tbody>'+
+   (rows.map((x,i)=>`<tr><td>${rows.length-i}</td><td>${esc(x.id)}</td><td>${esc(x.date)}</td><td>${x.type==='Cash In'?'<span class="status cleared">Cash In</span>':'<span class="status default">Cash Out</span>'}</td><td>${esc(x.category||'')}</td><td>${esc(x.reference||'')}</td><td>${esc(x.description||'')}</td><td>${x.type==='Cash In'?money(x.amount):'—'}</td><td>${x.type==='Cash Out'?money(x.amount):'—'}</td><td><b>${money(x.runningBalance)}</b></td><td class="no-print"><button type="button" class="secondary" onclick="editCashEntry('${esc(x.id)}')">Edit</button> <button type="button" class="danger" onclick="deleteCashEntry('${esc(x.id)}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="11" class="empty">No cashbook entries match your filters.</td></tr>')+'</tbody></table>';
+  if($('cashbookFilterSummary'))$('cashbookFilterSummary').textContent=`Showing ${rows.length} of ${all.length} entries • Opening cash: ${money(db.openingCash)} • Current balance: ${money(cash)}`;
+ }
+ if($('defaulterRows'))renderMonthlyDefaultersSafe();
+}
+function renderMonthlyDefaultersSafe(){
+ let month=$('defaulterMonth')?.value||today().slice(0,7),q=($('defaulterSearch')?.value||'').toLowerCase();
+ let rows=db.loans.filter(l=>String(l.dueDate||'').slice(0,7)===month&&loanCalc(l).balance>0&&l.dueDate<today()).filter(l=>{let m=db.members.find(x=>x.id===l.memberId);return(l.id+l.name+(m?.phone||'')).toLowerCase().includes(q)});
+ $('defaulterRows').innerHTML='<table><tr><th>No.</th><th>Loan ID</th><th>Member</th><th>Phone</th><th>Due date</th><th>Outstanding</th><th>Overdue days</th></tr>'+rows.map((l,i)=>{let m=db.members.find(x=>x.id===l.memberId),c=loanCalc(l),days=Math.max(0,Math.floor((new Date(today()+'T00:00:00')-new Date(l.dueDate+'T00:00:00'))/86400000));return `<tr><td>${i+1}</td><td>${esc(l.id)}</td><td>${esc(l.name)}</td><td>${esc(m?.phone||'')}</td><td>${esc(l.dueDate)}</td><td>${money(c.balance)}</td><td>${days}</td></tr>`}).join('')+`<tr><th colspan="5">Monthly defaulters total</th><th>${money(rows.reduce((a,l)=>a+loanCalc(l).balance,0))}</th><th>${rows.length} loans</th></tr></table>`+(rows.length?'':'<p class="muted">No defaulters found for this month.</p>');
+}
+window.editCashEntry=id=>{
+ const x=db.cashbook.find(v=>v.id===id);if(!x)return;
+ editingCashId=id;$('cashDate').value=x.date||today();$('cashType').value=x.type;$('cashCategory').value=x.category||'';
+ $('cashAmount').value=x.amount;$('cashReference').value=x.reference||'';$('cashDescription').value=x.description||'';
+ $('cashSaveButton').textContent='Update cashbook entry';$('cashbookFormTitle').textContent='Edit cashbook transaction';$('cashCancelEdit').style.display='inline-block';
+ $('cashbook').scrollIntoView({behavior:'smooth',block:'start'});
+};
+window.deleteCashEntry=id=>{if(confirm('Delete this cashbook entry? The running cash balance will be recalculated.')){db.cashbook=db.cashbook.filter(x=>x.id!==id);if(editingCashId===id)clearCashbookForm();save()}};
+$('cashbookForm')?.addEventListener('submit',e=>{
+ e.preventDefault();const amount=Number($('cashAmount').value);
+ if(!Number.isFinite(amount)||amount<=0){alert('Enter a valid amount greater than zero.');return}
+ const record={id:editingCashId||'CB'+Date.now(),date:$('cashDate').value,type:$('cashType').value,category:$('cashCategory').value.trim(),amount,reference:$('cashReference').value.trim(),description:$('cashDescription').value.trim()};
+ if(!record.date||!record.category||!record.description){alert('Complete the date, category and description.');return}
+ if(editingCashId){const i=db.cashbook.findIndex(x=>x.id===editingCashId);if(i>=0)db.cashbook[i]={...db.cashbook[i],...record}}
+ else db.cashbook.push(record);
+ clearCashbookForm();save();
+});
+$('cashCancelEdit')?.addEventListener('click',clearCashbookForm);
+$('cashClearForm')?.addEventListener('click',clearCashbookForm);
+$('openingCash')?.addEventListener('change',e=>{const n=Number(e.target.value||0);if(!Number.isFinite(n)||n<0){alert('Opening cash cannot be negative.');e.target.value=db.openingCash;return}if(confirm('Update opening cash? This changes the running balance of the entire cashbook.')){db.openingCash=n;save()}else e.target.value=db.openingCash});
+['cashSearch','cashFromDate','cashToDate','cashFilterType'].forEach(id=>$(id)?.addEventListener(id==='cashSearch'?'input':'change',renderFinanceExtras));
+$('cashResetFilters')?.addEventListener('click',()=>{['cashSearch','cashFromDate','cashToDate','cashFilterType'].forEach(id=>$(id).value='');renderFinanceExtras()});
+$('cashExport')?.addEventListener('click',()=>{
+ const rows=cashbookLedgerRows(),q=($('cashSearch')?.value||'').toLowerCase(),from=$('cashFromDate')?.value||'',to=$('cashToDate')?.value||'',type=$('cashFilterType')?.value||'';
+ const filtered=rows.filter(x=>(!q||[x.id,x.category,x.description,x.reference,x.date].join(' ').toLowerCase().includes(q))&&(!from||x.date>=from)&&(!to||x.date<=to)&&(!type||x.type===type));
+ const data=[['COFISEE MICROFINANCE — CASHBOOK'],['Opening cash',db.openingCash],['Entry ID','Date','Type','Category','Reference','Description','Cash In','Cash Out','Running balance'],...filtered.map(x=>[x.id,x.date,x.type,x.category||'',x.reference||'',x.description||'',x.type==='Cash In'?x.amount:'',x.type==='Cash Out'?x.amount:'',x.runningBalance])];
+ const csv=data.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'})),a=document.createElement('a');a.href=url;a.download='COFISEE_Cashbook_'+today()+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+$('cashPrint')?.addEventListener('click',()=>window.print());
+
+</script>
+
+
+<script>
+// COFISEE cloud adapter. The database enforces permissions with server-side RPC and RLS.
+(function(){
+ const CFG='cofisee_supabase_config_v1', PERMS=['dashboard','members','loans','repayments','reports','expenses','savings','guarantors','loanportal','amortization','cashbook','defaulters'];
+ const defaults={members:[],loans:[],repayments:[],expenses:[],savings:[],guarantors:[],cashbook:[],openingCash:0};
+ let client=null,profile=null,cloudSnapshot=null,staffCache=[];
+ const el=id=>document.getElementById(id), say=t=>{if(el('gateMessage'))el('gateMessage').textContent=t};
+ const cfg=()=>{try{return JSON.parse(localStorage.getItem(CFG)||'{}')}catch(_){return {}}};
+ const has=(module,action='view')=>!!(profile&&(profile.role==='admin'||profile.permissions?.[module]?.[action]));
+ function applyPermissions(){
+  document.querySelectorAll('.tab[data-tab]').forEach(b=>{let m=b.dataset.tab;if(m==='staffAdmin'){b.style.display=profile?.role==='admin'?'':'none';return}let ok=has(m,'view');if(m==='dashboard')ok=ok&&['members','loans','repayments','expenses','savings','cashbook'].some(x=>has(x,'view'));b.style.display=ok?'':'none'});
+  document.querySelectorAll('.panel[id]').forEach(p=>{let m=p.id;if(m==='staffAdmin'){if(profile?.role!=='admin'&&p.classList.contains('active')){p.classList.remove('active');document.querySelector('[data-tab="dashboard"]')?.click()}return}let ok=has(m,'view');if(m==='dashboard')ok=ok&&['members','loans','repayments','expenses','savings','cashbook'].some(x=>has(x,'view'));p.style.display=ok?'':'none';p.dataset.readonly=has(m,'edit')?'false':'true'});
+  if(profile?.role==='admin')el('staffAdminTab').style.display='';
+  const first=[...document.querySelectorAll('.tab[data-tab]')].find(b=>b.style.display!=='none');if(first&&!document.querySelector('.tab.active[data-tab="'+first.dataset.tab+'"]'))first.click();
+ }
+ function showApp(){el('cloudGate').style.display='none';el('cloudBar').style.display='flex';el('cloudUserLabel').textContent=(profile?.email||'Staff')+' • '+(profile?.role||'staff');applyPermissions()}
+ function showGate(msg){el('cloudGate').style.display='flex';el('cloudBar').style.display='none';if(msg)say(msg)}
+ async function connect(){
+  const url=el('cloudUrl').value.trim(),key=el('cloudKey').value.trim();
+  if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)||!key){say('Enter a valid Supabase Project URL and publishable key.');return}
+  localStorage.setItem(CFG,JSON.stringify({url,key}));
+  try{client=window.supabase.createClient(url,key);say('Connection saved. Sign in with your staff account.')}catch(e){say('Could not connect: '+e.message)}
+ }
+ async function ensureClient(){if(client)return true;let c=cfg();if(!c.url||!c.key)return false;try{client=window.supabase.createClient(c.url,c.key);return true}catch(e){say(e.message);return false}}
+ async function signIn(){
+  if(!await ensureClient()){say('Save the Project URL and publishable key first.');return}
+  const email=el('staffEmail').value.trim(),password=el('staffPassword').value;
+  if(!email||!password){say('Enter your staff email and password.');return}
+  say('Signing in…');const {data,error}=await client.auth.signInWithPassword({email,password});
+  if(error){say(error.message);return}await loadCloud(data.session.user);
+ }
+ async function loadCloud(user){
+  say('Loading your authorised COFISEE records…');
+  const [pr,dr]=await Promise.all([client.rpc('cofisee_my_profile'),client.rpc('cofisee_get_data')]);
+  if(pr.error||dr.error){await client.auth.signOut();showGate('Database setup or staff permissions are incomplete: '+(pr.error||dr.error).message);return}
+  profile=pr.data; if(!profile||!profile.active){await client.auth.signOut();showGate('Your staff account is not active. Contact the COFISEE administrator.');return}
+  const local=JSON.parse(localStorage.getItem(KEY)||'{"members":[],"loans":[],"repayments":[]}');
+  const incoming={...defaults,...(dr.data||{})};
+  const hasLocal=(local.members||[]).length+(local.loans||[]).length+(local.repayments||[]).length>0;
+  const hasRemote=(incoming.members||[]).length+(incoming.loans||[]).length+(incoming.repayments||[]).length>0;
+  if(profile.role==='admin'&&!hasRemote&&hasLocal&&confirm('Cloud database is empty, but this device has existing COFISEE records. Upload this device’s records to the cloud now? Export a backup first if possible.')){
+   const {error}=await client.rpc('cofisee_save_data',{p_data:local});if(error){showGate('Could not migrate local records: '+error.message);return}Object.assign(incoming,local);
+  }
+  db=Object.assign({members:[],loans:[],repayments:[],expenses:[],savings:[],guarantors:[],cashbook:[],openingCash:0},incoming);
+  cloudSnapshot=JSON.stringify(db);localStorage.setItem(KEY,JSON.stringify(db));
+  if(typeof window.render==='function')window.render();if(typeof window.renderFinanceExtras==='function')window.renderFinanceExtras();
+  showApp();if(profile.role==='admin')await refreshStaff();
+ }
+ window.cofiseeCloudReady=true;
+ window.cofiseeCloudSave=async function(){
+  if(!client||!profile)return;
+  const {error}=await client.rpc('cofisee_save_data',{p_data:db});
+  if(error){alert('Cloud save rejected: '+error.message+' Your latest changes have not been shared.');
+   const {data}=await client.rpc('cofisee_get_data');if(data){db=Object.assign({...defaults},data);localStorage.setItem(KEY,JSON.stringify(db));render();if(typeof renderFinanceExtras==='function')renderFinanceExtras()}
+  }else{cloudSnapshot=JSON.stringify(db);el('cloudUserLabel').textContent=(profile.email||'Staff')+' • '+profile.role+' • Synced';}
+ };
+ async function refreshStaff(){
+  if(profile?.role!=='admin')return;const {data,error}=await client.rpc('cofisee_list_staff');if(error){el('staffRows').textContent=error.message;return}staffCache=data||[];
+  el('staffRows').innerHTML='<table><tr><th>Email</th><th>Name</th><th>Role</th><th>Active</th><th>Module permissions</th><th>Save</th></tr>'+staffCache.map((u,i)=>`<tr><td>${esc(u.email)}</td><td>${esc(u.display_name||'')}</td><td><select id="role_${i}"><option value="staff" ${u.role==='staff'?'selected':''}>Staff</option><option value="manager" ${u.role==='manager'?'selected':''}>Manager</option><option value="admin" ${u.role==='admin'?'selected':''}>Administrator</option></select><label><input type="checkbox" id="active_${i}" ${u.active?'checked':''}> Active</label></td><td colspan="2"><div class="permission-grid">${PERMS.map(m=>`<div class="permission-item"><b>${m}</b><br><label><input type="checkbox" id="v_${i}_${m}" ${(u.permissions||{})[m]?.view?'checked':''}> View</label> <label><input type="checkbox" id="e_${i}_${m}" ${(u.permissions||{})[m]?.edit?'checked':''}> Edit</label></div>`).join('')}</div></td><td><button type="button" onclick="window.cofiseeSaveStaff(${i})">Save access</button></td></tr>`).join('')+'</table>';
+ }
+ window.cofiseeSaveStaff=async function(i){const u=staffCache[i];if(!u)return;const permissions={};PERMS.forEach(m=>permissions[m]={view:el(`v_${i}_${m}`).checked,edit:el(`e_${i}_${m}`).checked});const role=el(`role_${i}`).value;if(role==='admin'&&u.user_id!==profile.user_id&&!confirm('Grant full administrator access to '+u.email+'?'))return;const {error}=await client.rpc('cofisee_set_staff_access',{p_user_id:u.user_id,p_role:role,p_active:el(`active_${i}`).checked,p_permissions:permissions});if(error)alert('Could not update staff access: '+error.message);else{alert('Staff permissions updated.');await refreshStaff()}};
+ el('connectCloud').addEventListener('click',connect);el('staffLogin').addEventListener('click',signIn);el('cloudLogout').addEventListener('click',async()=>{if(client)await client.auth.signOut();profile=null;showGate('You have signed out.')});el('refreshStaff').addEventListener('click',refreshStaff);
+ const c=cfg();if(c.url)el('cloudUrl').value=c.url;if(c.key)el('cloudKey').value=c.key;
+ (async()=>{if(await ensureClient()){const {data}=await client.auth.getSession();if(data.session)await loadCloud(data.session.user);else showGate('Enter your staff login to open the shared COFISEE database.')}else showGate('Connect your Supabase project to activate secure cloud access.')})();
+})();
+</script>
+
+</body></html>
