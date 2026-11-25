@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>COFISEE Microfinance — Portable Offline System · 58mm Receipts</title>
+<style>
+:root{--green:#176b43;--green2:#218653;--pale:#eaf5ee;--ink:#17251d;--muted:#66756c;--line:#dce7df;--bg:#f4f8f5;--white:#fff;--red:#b42318;--amber:#a15c00}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Arial,Helvetica,sans-serif}
+header{background:linear-gradient(120deg,#104d32,#218653);color:white;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{font-size:21px;margin:0}header p{margin:4px 0 0;color:#d8f0e1;font-size:12px}
+.pill{border:1px solid #bce3ca;border-radius:30px;padding:6px 11px;font-size:12px}
+.layout{display:flex;min-height:calc(100vh - 80px)}nav{width:220px;background:#fff;border-right:1px solid var(--line);padding:14px 10px;flex-shrink:0}
+nav button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:11px 13px;border-radius:8px;color:#30483a;cursor:pointer;margin:2px 0;font-weight:600}
+nav button.active,nav button:hover{background:var(--pale);color:var(--green)}
+main{padding:22px;max-width:1500px;width:100%;margin:auto}.page{display:none}.page.active{display:block}
+h2{margin:0 0 15px;font-size:22px}h3{margin:0 0 12px;font-size:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:13px;margin-bottom:18px}
+.card,.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:0 2px 8px #153b2010}
+.metric{font-size:23px;font-weight:700;color:var(--green);margin-top:5px}.muted{color:var(--muted);font-size:12px}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:12px 0}
+button,.btn{border:0;border-radius:7px;padding:9px 13px;background:var(--green);color:white;font-weight:600;cursor:pointer}
+button.secondary,.btn.secondary{background:#e8f1eb;color:var(--green)}button.danger{background:#fff0ef;color:var(--red)}button.small{padding:5px 8px;font-size:12px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid #cbd9cf;border-radius:7px;background:#fff;font:inherit;color:var(--ink)}
+label{display:block;font-weight:600;font-size:12px;color:#405448;margin-bottom:5px}.field{margin-bottom:12px}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+table{border-collapse:collapse;width:100%;background:white;font-size:13px;min-width:650px}
+th,td{padding:10px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:#f0f6f1;color:#355642;position:sticky;top:0;z-index:1}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:9px;background:#fff}
+.status{display:inline-block;border-radius:20px;padding:3px 8px;font-size:11px;font-weight:700;background:#edf2ef}
+.status.Active{background:#e3f5e9;color:#176b43}.status.Cleared{background:#e9eefb;color:#344f9a}.status.Default{background:#fff0e3;color:#a15c00}.status.Pending{background:#f0f0f0;color:#555}
+.actions{display:flex;gap:5px;flex-wrap:wrap}.notice{padding:11px 13px;border-radius:8px;background:#eef7f0;border:1px solid #d5eadb;margin:10px 0;color:#315b40}
+.warning{background:#fff8e9;border-color:#f1dfb8;color:#805400}
+.empty{text-align:center;color:#718078;padding:28px}
+footer{text-align:center;color:#738078;font-size:11px;padding:25px}
+.search{max-width:300px}.right{margin-left:auto}
+@media(max-width:760px){.layout{display:block}nav{width:100%;display:flex;overflow:auto;border-right:0;border-bottom:1px solid var(--line);padding:8px}nav button{white-space:nowrap;width:auto}.layout main{padding:14px}header{padding:15px}}
+@media print{header,nav,.toolbar,.no-print,button{display:none!important}.layout{display:block}main{padding:0}.page{display:none!important}.page.active{display:block!important}.panel,.card{box-shadow:none}body{background:white}table{font-size:10px}footer{display:block}}
+
+.module-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px}
+.module-links button{min-height:42px}
+@media print{.report-print .tablewrap{overflow:visible;border:0}.report-print table{min-width:0;width:100%;font-size:10px}.report-print th,.report-print td{padding:5px}}
+
+.dash-graphs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}.dash-graph-card{border:1px solid var(--line);border-radius:10px;padding:13px;background:#fbfdfb;min-width:0}.dash-graph-card h4{margin:0 0 12px;color:var(--green);font-size:14px}.dash-bar-row{display:grid;grid-template-columns:86px minmax(40px,1fr) auto;gap:8px;align-items:center;margin:10px 0;font-size:11px}.dash-bar-track{height:13px;border-radius:20px;background:#e8eee9;overflow:hidden}.dash-bar-fill{height:100%;background:linear-gradient(90deg,#176b43,#43a66d);border-radius:20px;min-width:0}.dash-progress-track{height:20px;background:#e8eee9;border-radius:20px;overflow:hidden;margin:9px 0}.dash-progress-fill{height:100%;background:linear-gradient(90deg,#176b43,#43a66d);border-radius:20px}.dash-stat-row{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:7px 0}.dash-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted)}.dash-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;background:#218653}.dash-dot.orange{background:#d97706}.dash-dot.blue{background:#5478b8}
+@media(max-width:520px){.dash-bar-row{grid-template-columns:72px minmax(30px,1fr) auto}.dash-graph-card{padding:10px}}
+
+</style>
+</head>
+<body>
+<header><div><h1>COFISEE MICROFINANCE</h1><p>Members • Guarantors • Loans • Repayments • Loan Search • Savings • Cashbook • Reports</p></div><div class="toolbar" style="margin:0;align-items:center">
+<button type="button" class="secondary" onclick="goBack()" style="background:#fff;color:#176b43">← Back</button>
+<span class="pill">OFFLINE · EXCEL SHARING</span></div></header>
+<div class="layout">
+<nav id="nav">
+<button class="active" data-page="home">⌂ Home</button>
+<button data-page="dashboard">▦ Dashboard</button>
+<button data-page="members">♙ Members</button>
+<button data-page="loans">▤ Loans</button>
+<button data-page="loansearch">⌕ Loan Search</button>
+<button data-page="amortization">▤ Amortization Schedule</button>
+<button data-page="guarantors">♧ Guarantors</button>
+<button data-page="repayments">↻ Repayments</button>
+<button data-page="savings">◈ Savings</button>
+<button data-page="cashbook">▣ Cashbook</button>
+<button data-page="expenses">− Expenses</button>
+<button data-page="reports">▥ Reports</button>
+<button data-page="backup">⚙ Backup & Settings</button>
+</nav>
+<main>
+<section id="home" class="page active">
+<h2>Welcome to COFISEE MICROFINANCE</h2>
+<div class="panel" style="background:linear-gradient(120deg,#104d32,#218653);color:white;border:0;padding:26px">
+<h2 style="color:white;margin-bottom:6px">Financial growth starts here.</h2>
+<p style="color:#e0f3e7;margin:0">Offline management workspace · NAMULANDA BRANCH</p>
+<div class="toolbar" style="margin-top:18px">
+<button style="background:white;color:#176b43" onclick="showPage('members')">Register member</button>
+<button style="background:white;color:#176b43" onclick="showPage('loans')">Issue a loan</button>
+<button style="background:white;color:#176b43" onclick="showPage('repayments')">Record repayment</button>
+<button style="background:white;color:#176b43" onclick="showPage('reports')">Open reports</button>
+</div></div>
+<div class="cards" style="margin-top:16px">
+<div class="card"><div class="muted">Members registered</div><div class="metric" id="homeMembers">0</div></div>
+<div class="card"><div class="muted">Loans outstanding</div><div class="metric" id="homePortfolio">UGX 0</div></div>
+<div class="card"><div class="muted">Today's repayments</div><div class="metric" id="homeTodayPayments">UGX 0</div></div>
+<div class="card"><div class="muted">Members with active loans</div><div class="metric" id="homeBorrowers">0</div></div>
+</div>
+<div class="panel"><h3>All system modules</h3>
+<div class="module-links">
+<button onclick="showPage('dashboard')">Dashboard</button>
+<button onclick="showPage('members')">Members</button>
+<button onclick="showPage('guarantors')">Guarantors</button>
+<button onclick="showPage('loans')">Loans</button>
+<button onclick="showPage('loansearch')">Loan Search</button>
+<button onclick="showPage('amortization')">Amortization Schedule</button>
+<button onclick="showPage('repayments')">Repayments & Receipts</button>
+<button onclick="showPage('savings')">Savings</button>
+<button onclick="showPage('cashbook')">Cashbook</button>
+<button onclick="showPage('expenses')">Expenses</button>
+<button onclick="showPage('reports')">Reports</button>
+<button onclick="showPage('backup')">Backup & Settings</button>
+</div></div>
+<div class="panel"><h3>Quick guidance</h3><p>Register each member first, capture their guarantor details, then issue a loan only when they have no outstanding balance. Record every repayment against the member's open loan and print the receipt for the member.</p></div>
+</section>
+<section id="dashboard" class="page">
+<h2>Dashboard</h2><div class="muted" id="today"></div>
+<div class="cards">
+<div class="card"><div class="muted">Total members</div><div class="metric" id="mMembers">0</div></div>
+<div class="card"><div class="muted">Outstanding portfolio</div><div class="metric" id="mPortfolio">UGX 0</div></div>
+<div class="card"><div class="muted">Total savings balance</div><div class="metric" id="mSavings">UGX 0</div></div>
+<div class="card"><div class="muted">Cashbook position</div><div class="metric" id="mCash">UGX 0</div></div>
+<div class="card"><div class="muted">Business stock¹</div><div class="metric" id="mStock">UGX 0</div><div class="muted">Portfolio + net savings + cash position</div></div>
+<div class="card"><div class="muted">Interest on loans (contractual)</div><div class="metric" id="mInterest">UGX 0</div></div>
+<div class="card"><div class="muted">Active borrowers</div><div class="metric" id="mBorrowers">0</div></div>
+<div class="card"><div class="muted">Guarantors registered</div><div class="metric" id="mGuarantors">0</div></div>
+<div class="card"><div class="muted">Repayments today</div><div class="metric" id="mTodayRepayments">UGX 0</div></div>
+</div>
+<div class="panel" style="margin-top:14px"><h3>Collection progress — this month</h3><div id="collectionProgress"><div class="muted">Collection progress will appear when loans are registered.</div></div></div>
+<div class="panel" style="margin-top:14px"><h3>Business performance graphs</h3><div class="dash-graphs"><div class="dash-graph-card"><h4>Monthly collections vs expected</h4><div id="collectionGraph"></div></div><div class="dash-graph-card"><h4>Loan portfolio status</h4><div id="portfolioGraph"></div></div><div class="dash-graph-card"><h4>Last six months — collections</h4><div id="trendGraph"></div></div></div></div>
+<div class="panel"><h3>Portfolio overview</h3><div id="overview" class="muted">No records yet. Register members and loans to begin.</div></div>
+<div class="panel" style="margin-top:14px"><h3>Recent repayments</h3><div id="recentPayments" class="muted">No repayments recorded yet.</div></div>
+<p class="muted">¹ Business stock is a management indicator, not accounting profit or available cash. Avoid double-counting funds between cash, savings and loan portfolio.</p>
+</section>
+<section id="members" class="page">
+<h2>Members</h2>
+<div class="panel">
+<h3 id="memberFormTitle">Register member</h3>
+<form id="memberForm"><input type="hidden" id="memberEdit">
+<div class="formgrid">
+<div class="field"><label>Member ID (automatically generated)</label><input id="memberId" readonly placeholder="Generated when saved"><div class="muted">The system assigns the next available COF number.</div></div>
+<div class="field"><label>Full name *</label><input id="memberName" required></div>
+<div class="field"><label>Phone number</label><input id="memberPhone"></div>
+<div class="field"><label>Address / village</label><input id="memberAddress"></div>
+<div class="field"><label>National ID number (optional)</label><input id="memberNin"></div>
+<div class="field"><label>Registration date *</label><input id="memberDate" type="date" required></div>
+</div><div class="toolbar"><button type="submit">Save member</button><button type="button" class="secondary" onclick="resetMember()">Clear</button></div></form>
+</div>
+<div class="toolbar"><input class="search" id="memberSearch" placeholder="Search ID, name or phone…" oninput="renderMembers()"><span class="muted" id="memberCount"></span></div>
+<div class="tablewrap"><table><thead><tr><th>No.</th><th>Member ID</th><th>Name</th><th>Phone</th><th>Address</th><th>Registered</th><th>Type</th><th>Actions</th></tr></thead><tbody id="membersBody"></tbody></table></div>
+</section>
+<section id="loans" class="page">
+<h2>Loans</h2><div class="panel"><h3 id="loanFormTitle">Issue loan</h3>
+<form id="loanForm"><input type="hidden" id="loanEdit"><div class="formgrid">
+<div class="field"><label>Eligible member *</label><select id="loanMember" required></select><div class="muted">Only members with no outstanding loan are listed.</div></div>
+<div class="field"><label>Principal (UGX) *</label><input id="loanPrincipal" type="number" min="1" step="1" required></div>
+<div class="field"><label>Interest rate (%)</label><input id="loanRate" type="number" min="0" step="0.1" value="20"></div>
+<div class="field"><label>Issue date *</label><input id="loanDate" type="date" required></div>
+<div class="field"><label>Term (days)</label><input id="loanTerm" type="number" min="1" value="28"></div>
+<div class="field"><label>Installment frequency</label><select id="loanFrequency"><option>Weekly</option><option>Daily</option><option>Monthly</option></select></div>
+</div><div class="notice">Default interest is 20% of the original principal. Due date is calculated from issue date + term. A member cannot receive another loan until the current loan is fully repaid. Each new loan receives a fresh ID.</div>
+<div class="toolbar"><button type="submit">Save loan</button><button type="button" class="secondary" onclick="resetLoan()">Clear</button></div></form></div>
+<div class="toolbar"><input class="search" id="loanSearch" placeholder="Search loan ID or member…" oninput="renderLoans()"><select id="loanFilter" onchange="renderLoans()" style="max-width:170px"><option value="">All statuses</option><option>Active</option><option>Default</option><option>Cleared</option></select></div>
+<div class="tablewrap"><table><thead><tr><th>No.</th><th>Loan ID</th><th>Member</th><th>Principal</th><th>Interest</th><th>Total due</th><th>Paid</th><th>Balance</th><th>Issue date</th><th>Due date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="loansBody"></tbody></table></div>
+</section>
+<section id="loansearch" class="page">
+<h2>Loan Search Portal</h2>
+<div class="panel"><h3>Find a member or loan</h3><div class="formgrid">
+<div class="field"><label>Search by member name, Member ID, phone or Loan ID</label><input id="loanPortalQuery" placeholder="Enter member name or loan ID" oninput="renderLoanPortal()"></div>
+<div class="field"><label>Loan status</label><select id="loanPortalStatus" onchange="renderLoanPortal()"><option value="">All statuses</option><option>Active</option><option>Default</option><option>Cleared</option></select></div>
+</div></div>
+<div id="loanPortalResults" class="panel"><div class="empty">Enter a name, member ID, phone number or loan ID to search.</div></div>
+</section>
+<section id="guarantors" class="page">
+<h2>Guarantors Registration</h2>
+<div class="panel"><h3>Register guarantor</h3><form id="guarantorForm"><div class="formgrid">
+<div class="field"><label>Linked member *</label><select id="guarantorMember" required></select></div>
+<div class="field"><label>Guarantor full name *</label><input id="guarantorName" required></div>
+<div class="field"><label>Phone number *</label><input id="guarantorPhone" required></div>
+<div class="field"><label>Relationship to member</label><input id="guarantorRelation" placeholder="e.g. Relative, friend, colleague"></div>
+<div class="field"><label>Address / village</label><input id="guarantorAddress"></div>
+<div class="field"><label>National ID number</label><input id="guarantorNin"></div>
+</div><div class="toolbar"><button type="submit">Save guarantor</button><button type="reset" class="secondary">Clear</button></div></form></div>
+<div class="toolbar"><input id="guarantorSearch" class="search" placeholder="Search guarantor or member" oninput="renderGuarantors()"></div>
+<div class="tablewrap"><table><thead><tr><th>No.</th><th>Member</th><th>Guarantor</th><th>Phone</th><th>Relationship</th><th>Address</th><th>National ID</th><th>Action</th></tr></thead><tbody id="guarantorsBody"></tbody></table></div>
+</section>
+<section id="repayments" class="page">
+<h2>Repayments</h2><div class="panel"><h3>Record repayment</h3><form id="repayForm"><div class="formgrid">
+<div class="field"><label>Member name / Member ID *</label><input id="repayMemberSearch" list="repayMemberOptions" placeholder="Start typing member name" autocomplete="off" oninput="selectRepaymentMember()" required><datalist id="repayMemberOptions"></datalist><div class="muted">Typing a member selects their outstanding loan automatically.</div></div>
+<div class="field"><label>Outstanding loan *</label><select id="repayLoan" required onchange="showRepaymentBalance()"></select></div>
+<div class="field"><label>Current outstanding balance</label><input id="repayBalancePreview" readonly placeholder="Select a member"></div>
+<div class="field"><label>Amount received (UGX) *</label><input id="repayAmount" type="number" min="1" required></div>
+<div class="field"><label>Payment date *</label><input id="repayDate" type="date" required></div>
+<div class="field"><label>Received from</label><input id="repayPayer" placeholder="Member name"></div>
+<div class="field"><label>Automatic receipt reference</label><input id="repayRef" readonly placeholder="Generated automatically"></div>
+<div class="field"><label>Notes</label><input id="repayNotes"></div>
+</div><div class="notice">Choose or type the member name. The system selects the outstanding loan and displays its balance. A unique receipt reference is generated automatically.</div><div class="toolbar"><button type="submit">Save repayment & print receipt</button><button type="button" class="secondary" onclick="printCurrent()">Print register</button></div></form></div>
+<div class="toolbar"><label>Filter date <input id="repayFilterDate" type="date" onchange="renderRepayments()"></label><input class="search" id="repaySearch" placeholder="Search loan, payer or receipt…" oninput="renderRepayments()"><button class="secondary" onclick="document.getElementById('repayFilterDate').value='';renderRepayments()">Clear date</button></div>
+<div id="repaymentsGroups"></div>
+</section>
+<section id="savings" class="page">
+<h2>Savings</h2><div class="panel"><h3>Record savings transaction</h3><form id="savingForm"><div class="formgrid">
+<div class="field"><label>Member *</label><select id="savingMember" required></select></div>
+<div class="field"><label>Transaction *</label><select id="savingType"><option>Deposit</option><option>Withdrawal</option></select></div>
+<div class="field"><label>Amount (UGX) *</label><input id="savingAmount" type="number" min="1" required></div>
+<div class="field"><label>Date *</label><input id="savingDate" type="date" required></div>
+<div class="field"><label>Channel</label><select id="savingChannel"><option>Cash</option><option>Bank</option><option>Mobile Money</option><option>Other</option></select></div>
+<div class="field"><label>Reference</label><input id="savingRef"></div>
+</div><div class="toolbar"><button type="submit">Save transaction</button></div></form></div>
+<div class="cards"><div class="card"><div class="muted">Total deposits</div><div class="metric" id="savingDeposits">UGX 0</div></div><div class="card"><div class="muted">Total withdrawals</div><div class="metric" id="savingWithdrawals">UGX 0</div></div><div class="card"><div class="muted">Net savings</div><div class="metric" id="savingNet">UGX 0</div></div></div>
+<div class="tablewrap"><table><thead><tr><th>Date</th><th>Member</th><th>Type</th><th>Amount</th><th>Channel</th><th>Reference</th><th>Action</th></tr></thead><tbody id="savingsBody"></tbody></table></div>
+</section>
+<section id="cashbook" class="page">
+<h2>Cashbook</h2><div class="panel"><h3>New cashbook entry</h3><form id="cashForm"><div class="formgrid">
+<div class="field"><label>Entry type *</label><select id="cashType"><option>Cash In</option><option>Cash Out</option></select></div>
+<div class="field"><label>Category</label><select id="cashCategory"><option>Loan repayment</option><option>Loan disbursement</option><option>Operating expense</option><option>Office rent</option><option>Transport</option><option>Food</option><option>Stationery</option><option>Mobile money / bank</option><option>Other</option></select></div>
+<div class="field"><label>Amount (UGX) *</label><input id="cashAmount" type="number" min="1" required></div>
+<div class="field"><label>Date *</label><input id="cashDate" type="date" required></div>
+<div class="field"><label>Description</label><input id="cashDescription"></div>
+<div class="field"><label>Reference</label><input id="cashReference"></div>
+</div><div class="toolbar"><button type="submit">Save entry</button></div></form></div>
+<div class="cards"><div class="card"><div class="muted">Total cash in</div><div class="metric" id="cashIn">UGX 0</div></div><div class="card"><div class="muted">Total cash out</div><div class="metric" id="cashOut">UGX 0</div></div><div class="card"><div class="muted">Cash position</div><div class="metric" id="cashBalance">UGX 0</div></div></div>
+<div class="tablewrap"><table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Cash In</th><th>Cash Out</th><th>Running balance</th><th>Action</th></tr></thead><tbody id="cashBody"></tbody></table></div>
+</section>
+<section id="amortization" class="page">
+<h2>Amortization Schedule</h2>
+<div class="panel">
+<p class="muted">Search by client name, Member ID, phone number or Loan ID. The schedule is calculated in equal weekly installments from the loan issue date and total amount due.</p>
+<div class="formgrid">
+<div class="field"><label>Search client or loan</label><input id="amortQuery" placeholder="Type member name or Loan ID" oninput="renderAmortization()"></div>
+<div class="field"><label>Choose outstanding loan</label><select id="amortLoan" onchange="renderAmortization()"><option value="">Select a loan</option></select></div>
+</div>
+<div id="amortOutput" class="panel"><div class="empty">Search for a client to view their weekly repayment plan.</div></div>
+</div></section>
+<section id="expenses" class="page">
+<h2>Expenses Registration</h2>
+<div class="panel"><h3>Record a business expense</h3>
+<form id="expenseForm"><div class="formgrid">
+<div class="field"><label>Expense category *</label><select id="expenseCategory" required>
+<option>Rent</option><option>Food</option><option>Transport</option><option>Social bundles</option><option>Stationery</option><option>Staff / Allan</option><option>Utilities</option><option>Bank charges</option><option>Repairs</option><option>Other</option></select></div>
+<div class="field"><label>Amount (UGX) *</label><input id="expenseAmount" type="number" min="1" step="1" required></div>
+<div class="field"><label>Date *</label><input id="expenseDate" type="date" required></div>
+<div class="field"><label>Paid to / recipient</label><input id="expensePayee" placeholder="Name or supplier"></div>
+<div class="field"><label>Description</label><input id="expenseDescription" placeholder="Purpose of expense"></div>
+<div class="field"><label>Reference / receipt number</label><input id="expenseReference" placeholder="Optional reference"></div>
+</div><div class="toolbar"><button type="submit">Save expense</button></div></form>
+<div class="notice">Saving an expense also records a Cash Out entry in the cashbook so that your cash position remains updated.</div></div>
+<div class="cards"><div class="card"><div class="muted">Total expenses recorded</div><div class="metric" id="expenseTotal">UGX 0</div></div><div class="card"><div class="muted">This month</div><div class="metric" id="expenseMonthTotal">UGX 0</div></div></div>
+<div class="tablewrap"><table><thead><tr><th>Date</th><th>Category</th><th>Paid to</th><th>Description</th><th>Reference</th><th>Amount</th><th>Action</th></tr></thead><tbody id="expensesBody"></tbody></table></div>
+</section>
+<section id="reports" class="page">
+<h2>Reports</h2><div class="panel"><div class="formgrid">
+<div class="field"><label>Reporting month</label><input type="month" id="reportMonth"></div>
+<div class="field"><label>Prepared by</label><input id="preparedBy" placeholder="Name of preparer"></div>
+<div class="field"><label>Performance Summary</label><input id="reportComment" placeholder="Management performance summary"></div><div class="field"><label>Challenges Identified</label><input id="reportChallenges" placeholder="Challenges faced this month"></div><div class="field"><label>Recommendations</label><input id="reportRecommendations" placeholder="Recommended actions"></div><div class="field"><label>Approved by</label><input id="reportApproved" placeholder="Approving officer"></div><div class="field"><label>Approval date</label><input id="reportApprovalDate" type="date"></div>
+</div><div class="toolbar"><button onclick="generateReport()">Generate report</button><button class="secondary" onclick="printCurrent()">Print / Save PDF</button><button class="secondary" onclick="downloadReportCSV()">Download CSV</button></div></div>
+<div id="reportOutput" class="panel"><div class="empty">Choose a month and generate a report.</div></div>
+</section>
+<section id="backup" class="page">
+<h2>Backup & Settings</h2><div class="notice warning"><b>Important:</b> This is an offline, single-device application. Your records are stored in this browser on this device. Clearing browser data, changing browsers or losing the device can remove records. Export backups regularly and keep a copy somewhere safe.</div>
+<div class="panel"><h3>Excel sharing and safe record merging</h3>
+<p>Export all records into one Excel-compatible workbook with separate worksheets. For a one-file transfer that opens with the current records already inside, use “Download COFISEE with all records”. Share that HTML file using Bluetooth, Quick Share or USB. On a new device, opening the portable file seeds its browser with the embedded records. On a device that already has COFISEE data, use “Import Excel workbook” and select the portable HTML file to ADD its records without replacing existing records.</p>
+<div class="toolbar">
+<button onclick="exportExcelWorkbook()">Download Excel workbook</button>
+<button onclick="exportPortableSystem()">Download COFISEE with all records</button>
+<label class="btn secondary">Import Excel / COFISEE v13 JSON backup<input type="file" id="excelImportFile" accept=".html,.htm,.xml,.xls,.xlsx,.json,text/html,application/xml,application/vnd.ms-excel,application/json" style="display:none" onchange="importSharedFile(event)"></label>
+<button class="secondary" onclick="exportBackup()">Download JSON backup</button>
+</div>
+<div class="notice">Import mode: <b>ADD records (Option A)</b>. Existing records are retained. Matching IDs are skipped; conflicting records are flagged and never silently overwritten.</div>
+<div id="importSummary" class="panel" style="display:none;margin-top:12px"></div>
+</div>
+<div class="panel" style="margin-top:14px"><h3>Legacy backup and CSV</h3><p>JSON backup restoration is retained for emergency recovery. It replaces current records, so use the Excel import above for ordinary device-to-device sharing.</p><div class="toolbar"><label class="btn secondary">Restore JSON backup (replace)<input type="file" id="restoreFile" accept=".json,application/json" style="display:none" onchange="restoreBackup(event)"></label><button class="secondary" onclick="exportAllCSV()">Export selected CSV tables</button></div></div>
+<div class="panel" style="margin-top:14px"><h3>58mm Bluetooth thermal printer</h3>
+<p>COFISEE receipts use your supplied OFFICIAL PAYMENT RECEIPT layout and are formatted for 58mm thermal paper. Pair the printer in Android Bluetooth settings, then enable its compatible printing service/app. When you print a receipt, choose that printer in the Android print screen. Some Bluetooth Classic printers require a companion printing app; Chrome does not support every raw Bluetooth printer directly.</p>
+<div class="notice">Receipt paper: <b>58mm</b> · Layout: <b>COFISEE official payment receipt</b> · Printing: <b>Android system print dialog</b></div>
+<div class="toolbar"><button type="button" class="secondary" onclick="printTestReceipt()">Print test receipt</button></div></div>
+<div class="panel" style="margin-top:14px"><h3>Business settings</h3><div class="formgrid"><div class="field"><label>Branch name</label><input id="branchName" value="NAMULANDA BRANCH"></div><div class="field"><label>Default interest (%)</label><input id="defaultInterest" type="number" value="20" min="0" step=".1"></div><div class="field"><label>Default loan term (days)</label><input id="defaultTerm" type="number" value="28" min="1"></div><div class="field"><label>Overdue penalty (%)</label><input id="penaltyRate" type="number" value="2" min="0" step=".1"></div></div><button onclick="saveSettings()">Save settings</button></div>
+<div class="panel" style="margin-top:14px"><h3>System information</h3><div id="systemInfo" class="muted"></div><p class="muted">Offline browser storage. Portable HTML export packages a snapshot of all records into a new copy of this system. Excel import can merge records. Transfers are file-based, not live synchronization.</p></div>
+</section>
+<footer>Thanks for choosing cofisee microfinance, we are committed to your financial growth</footer>
+</main></div>
+<script>
+const KEY='cofisee_offline_v1';
+const EMBEDDED_BACKUP=/*COFISEE_DATA_START*/null/*COFISEE_DATA_END*/;
+const today=()=>new Date().toISOString().slice(0,10);
+const blank=()=>({members:[],loans:[],repayments:[],savings:[],cashbook:[],guarantors:[],expenses:[],settings:{branch:'NAMULANDA BRANCH',interest:20,term:28,penalty:2,memberSequence:0,receiptSequence:0}});
+let db=load();
+function load(){
+  try{
+    const saved=localStorage.getItem(KEY);
+    const source=saved?JSON.parse(saved):(EMBEDDED_BACKUP&&typeof EMBEDDED_BACKUP==='object'?EMBEDDED_BACKUP:{});
+    let x={...blank(),...source};
+    x.guarantors=x.guarantors||[];x.expenses=x.expenses||[];
+    x.settings={...blank().settings,...(x.settings||{})};
+    // First opening of a portable copy seeds this browser with the embedded records.
+    if(!saved&&EMBEDDED_BACKUP&&typeof EMBEDDED_BACKUP==='object')localStorage.setItem(KEY,JSON.stringify(x));
+    return x;
+  }catch(e){return blank();}
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(db));refresh();}
+function id(prefix){return prefix+'-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,5).toUpperCase();}
+function nextMemberNo(){db.settings.memberSequence=Math.max(num(db.settings.memberSequence),...db.members.map(m=>{let n=String(m.memberNo||'').match(/^COF(\d+)$/i);return n?Number(n[1]):0;}))+1;return 'COF'+String(db.settings.memberSequence).padStart(5,'0');}
+function nextLoanNo(mid){let m=member(mid),prefix=(m.memberNo||'COF').toUpperCase()+'-L';let max=db.loans.filter(l=>l.memberId===mid).reduce((n,l)=>{let hit=String(l.loanNo||'').match(/-L(\d+)$/i);return Math.max(n,hit?Number(hit[1]):0);},0);return prefix+(max+1);}
+function nextReceiptNo(){db.settings.receiptSequence=num(db.settings.receiptSequence)+1;let d=today().replaceAll('-','');return 'COF-RCP-'+d+'-'+String(db.settings.receiptSequence).padStart(5,'0');}
+function money(n){return 'UGX '+Math.round(Number(n)||0).toLocaleString('en-UG');}
+function num(v){return Number(v)||0}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function datePlus(date,days){let d=new Date(date+'T12:00:00');d.setDate(d.getDate()+Number(days));return d.toISOString().slice(0,10);}
+function member(id){return db.members.find(m=>m.id===id)||{}}
+function loanPaid(l){return db.repayments.filter(r=>r.loanId===l.id).reduce((s,r)=>s+num(r.amount),0)}
+function loanTotal(l){return num(l.principal)*(1+num(l.rate)/100)}
+function balance(l){return Math.max(0,loanTotal(l)-loanPaid(l))}
+function loanStatus(l){if(balance(l)<=0)return 'Cleared';return today()>l.dueDate?'Default':'Active'}
+function cashTotals(){let ins=db.cashbook.filter(x=>x.type==='Cash In').reduce((s,x)=>s+num(x.amount),0),outs=db.cashbook.filter(x=>x.type==='Cash Out').reduce((s,x)=>s+num(x.amount),0);return {ins,outs,balance:ins-outs};}
+function savingsTotals(){let d=db.savings.filter(x=>x.type==='Deposit').reduce((s,x)=>s+num(x.amount),0),w=db.savings.filter(x=>x.type==='Withdrawal').reduce((s,x)=>s+num(x.amount),0);return {d,w,net:d-w};}
+function portfolio(){return db.loans.reduce((s,l)=>s+balance(l),0);}
+function setDefaults(){['memberDate','loanDate','repayDate','savingDate','cashDate','expenseDate'].forEach(x=>{let e=document.getElementById(x);if(e&&!e.value)e.value=today();});document.getElementById('today').textContent='Today: '+today()+' · '+db.settings.branch;}
+let pageHistory=['home'];
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
+// Start on the Home page when this enhanced version is opened.
+document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id==='home'));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.page==='home'));
+function showPage(p,fromBack=false){let current=document.querySelector('.page.active')?.id||'home';if(!fromBack&&current!==p){pageHistory.push(p);if(pageHistory.length>40)pageHistory.shift();}document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===p));refresh();}
+function refresh(){setDefaults();renderDashboard();renderExpenses();renderAmortization();renderMembers();renderLoans();renderLoanPortal();renderGuarantors();renderRepayments();renderSavings();renderCashbook();populateSelects();renderSettingsInfo();}
+function renderDashboard(){
+ let s=savingsTotals(),c=cashTotals(),p=portfolio(),interest=db.loans.reduce((a,l)=>a+num(l.principal)*num(l.rate)/100,0),active=db.loans.filter(l=>balance(l)>0),todayPaid=db.repayments.filter(r=>r.date===today()).reduce((a,r)=>a+num(r.amount),0);
+ document.getElementById('mMembers').textContent=db.members.length;document.getElementById('mPortfolio').textContent=money(p);document.getElementById('mSavings').textContent=money(s.net);document.getElementById('mCash').textContent=money(c.balance);document.getElementById('mStock').textContent=money(p+s.net+c.balance);document.getElementById('mInterest').textContent=money(interest);document.getElementById('mBorrowers').textContent=new Set(active.map(l=>l.memberId)).size;document.getElementById('mGuarantors').textContent=(db.guarantors||[]).length;document.getElementById('mTodayRepayments').textContent=money(todayPaid);document.getElementById('homeMembers').textContent=db.members.length;document.getElementById('homePortfolio').textContent=money(p);document.getElementById('homeTodayPayments').textContent=money(todayPaid);document.getElementById('homeBorrowers').textContent=new Set(active.map(l=>l.memberId)).size;
+ let def=db.loans.filter(l=>loanStatus(l)==='Default').length,clear=db.loans.filter(l=>loanStatus(l)==='Cleared').length,month=today().slice(0,7),monthExpenses=(db.expenses||[]).filter(x=>(x.date||'').slice(0,7)===month).reduce((a,x)=>a+num(x.amount),0);
+ document.getElementById('overview').innerHTML=`<div class="cards"><div class="card">Total loans<div class="metric">${db.loans.length}</div></div><div class="card">Active / overdue<div class="metric">${active.length} / ${def}</div></div><div class="card">Cleared loans<div class="metric">${clear}</div></div><div class="card">Cashbook entries<div class="metric">${db.cashbook.length}</div></div><div class="card">Expenses this month<div class="metric">${money(monthExpenses)}</div></div><div class="card">Registered guarantors<div class="metric">${(db.guarantors||[]).length}</div></div></div>`;
+ // Expected collection is calculated from the weekly amortization schedule: installments with due dates in this month.
+ let dueThisMonth=0,paidTowardDue=0;
+ db.loans.forEach(l=>{let weeks=Math.max(1,Math.ceil(num(l.term||28)/7)),total=loanTotal(l),base=Math.floor(total/weeks),remainder=Math.round(total-base*weeks),payments=db.repayments.filter(r=>r.loanId===l.id).sort((a,b)=>(a.date||'').localeCompare(b.date||'')),totalPaid=payments.reduce((a,r)=>a+num(r.amount),0),cum=0;
+  for(let i=0;i<weeks;i++){let due=base+(i<remainder?1:0),dueDate=datePlus(l.date,(i+1)*7),allocated=Math.min(due,Math.max(0,totalPaid-cum));cum+=due;if((dueDate||'').slice(0,7)===month){dueThisMonth+=due;paidTowardDue+=allocated;}}
+ });
+ let monthCollected=db.repayments.filter(r=>(r.date||'').slice(0,7)===month).reduce((a,r)=>a+num(r.amount),0),progress=dueThisMonth?Math.round(Math.min(100,paidTowardDue/dueThisMonth*100)):0,remainingCollection=Math.max(0,dueThisMonth-paidTowardDue);
+ document.getElementById('collectionProgress').innerHTML=`<div class="dash-stat-row"><span>Expected installments due this month</span><b>${money(dueThisMonth)}</b></div><div class="dash-stat-row"><span>Collected against those installments</span><b>${money(paidTowardDue)}</b></div><div class="dash-progress-track"><div class="dash-progress-fill" style="width:${progress}%"></div></div><div class="dash-stat-row"><b>${progress}% collected</b><span class="muted">${money(remainingCollection)} remaining to collect</span></div><div class="dash-stat-row"><span>Total cash repayments received this month (including early/late payments)</span><b>${money(monthCollected)}</b></div><div class="muted">Progress compares scheduled weekly installments due this calendar month with payments allocated to those installments. It excludes future installments.</div>`;
+ const bar=(label,value,max,color='')=>`<div class="dash-bar-row"><span>${esc(label)}</span><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${max?Math.min(100,Math.max(0,value/max*100)):0}%;${color?`background:${color}`:''}"></div></div><b>${money(value)}</b></div>`;
+ document.getElementById('collectionGraph').innerHTML=dueThisMonth||monthCollected?bar('Expected',dueThisMonth,Math.max(dueThisMonth,monthCollected))+bar('Collected',paidTowardDue,Math.max(dueThisMonth,monthCollected))+`<div class="muted">${progress}% of scheduled installments collected</div>`:'<div class="empty">No installments due this month yet.</div>';
+ let loanCounts=[['Active',db.loans.filter(l=>loanStatus(l)==='Active').length],['Default',def],['Cleared',clear]],maxLoans=Math.max(1,...loanCounts.map(x=>x[1]));
+ document.getElementById('portfolioGraph').innerHTML=loanCounts.map(([label,value])=>`<div class="dash-bar-row"><span>${label}</span><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${value/maxLoans*100}%;${label==='Default'?'background:#d97706':label==='Cleared'?'background:#5478b8':''}"></div></div><b>${value}</b></div>`).join('')+`<div class="muted">Total loans: ${db.loans.length}</div>`;
+ let months=[];let now=new Date();for(let i=5;i>=0;i--){let d=new Date(now.getFullYear(),now.getMonth()-i,1),key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');months.push({key,label:d.toLocaleDateString('en-GB',{month:'short'}),value:db.repayments.filter(r=>(r.date||'').slice(0,7)===key).reduce((a,r)=>a+num(r.amount),0)});}
+ let maxTrend=Math.max(1,...months.map(x=>x.value));document.getElementById('trendGraph').innerHTML=months.map(x=>`<div class="dash-bar-row"><span>${x.label}</span><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${x.value/maxTrend*100}%"></div></div><b>${money(x.value)}</b></div>`).join('');
+ let recent=db.repayments.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,5);document.getElementById('recentPayments').innerHTML=recent.length?`<div class="tablewrap"><table><thead><tr><th>Date</th><th>Member</th><th>Loan ID</th><th>Amount</th><th>Receipt</th></tr></thead><tbody>${recent.map(r=>{let l=db.loans.find(x=>x.id===r.loanId);return `<tr><td>${esc(r.date)}</td><td>${esc(r.payer||member(l?.memberId).name)}</td><td>${esc(l?.loanNo||'')}</td><td>${money(r.amount)}</td><td>${esc(r.receiptNo||r.ref||'')}</td></tr>`}).join('')}</tbody></table></div>`:'No repayments recorded yet.';
+}
+
+function renderMembers(){let q=(document.getElementById('memberSearch')?.value||'').toLowerCase(),arr=db.members.filter(m=>(m.memberNo+' '+m.name+' '+m.phone).toLowerCase().includes(q));document.getElementById('memberCount').textContent=arr.length+' members';document.getElementById('membersBody').innerHTML=arr.length?arr.map((m,i)=>`<tr><td>${i+1}</td><td>${esc(m.memberNo)}</td><td>${esc(m.name)}</td><td>${esc(m.phone)}</td><td>${esc(m.address)}</td><td>${m.date}</td><td>${m.date.slice(0,7)===today().slice(0,7)?'New':'Old'}</td><td class="actions"><button class="small secondary" onclick="editMember('${m.id}')">Edit</button><button class="small danger" onclick="deleteMember('${m.id}')">Delete</button></td></tr>`).join(''):'<tr><td colspan="8" class="empty">No members found.</td></tr>';}
+function resetMember(){memberForm.reset();memberEdit.value='';memberId.value='(assigned on save)';memberDate.value=today();memberFormTitle.textContent='Register member';}
+memberForm.onsubmit=e=>{e.preventDefault();let edit=memberEdit.value,memberNo=edit?db.members.find(m=>m.id===edit)?.memberNo:nextMemberNo();let x={id:edit||id('MEM'),memberNo,name:memberName.value.trim(),phone:memberPhone.value.trim(),address:memberAddress.value.trim(),nin:memberNin.value.trim(),date:memberDate.value};if(edit)db.members=db.members.map(m=>m.id===edit?x:m);else db.members.push(x);save();resetMember();};
+function editMember(i){let m=db.members.find(x=>x.id===i);if(!m)return;memberEdit.value=m.id;memberId.value=m.memberNo;memberName.value=m.name;memberPhone.value=m.phone;memberAddress.value=m.address;memberNin.value=m.nin;memberDate.value=m.date;memberFormTitle.textContent='Edit member';showPage('members');}
+function deleteMember(i){if(db.loans.some(l=>l.memberId===i))return alert('Cannot delete a member with loan records.');if(confirm('Delete this member?')){db.members=db.members.filter(m=>m.id!==i);save();}}
+function populateSelects(){let opts=db.members.map(m=>`<option value="${m.id}">${esc(m.memberNo)} — ${esc(m.name)}</option>`).join('');let eligible=db.members.filter(m=>!db.loans.some(l=>l.memberId===m.id&&balance(l)>0));loanMember.innerHTML='<option value="">Choose eligible member</option>'+eligible.map(m=>`<option value="${m.id}">${esc(m.memberNo)} — ${esc(m.name)}</option>`).join('');savingMember.innerHTML='<option value="">Choose member</option>'+opts;guarantorMember.innerHTML='<option value="">Choose member</option>'+opts;let ls=db.loans.filter(l=>balance(l)>0);repayLoan.innerHTML='<option value="">Choose outstanding loan</option>'+ls.map(l=>`<option value="${l.id}">${esc(l.loanNo)} — ${esc(member(l.memberId).name)} · ${money(balance(l))}</option>`).join('');repayMemberOptions.innerHTML=ls.map(l=>{let m=member(l.memberId);return `<option value="${esc(m.name)} — ${esc(m.memberNo)}"></option>`}).filter((v,i,a)=>a.indexOf(v)===i).join('');}
+function selectRepaymentMember(){let q=repayMemberSearch.value.trim().toLowerCase();if(!q){repayLoan.value='';repayBalancePreview.value='';repayRef.value='';return;}let token=q.split(' — ')[0].trim();let l=db.loans.find(x=>balance(x)>0&&(((member(x.memberId).name||'').toLowerCase()===token)||((member(x.memberId).memberNo||'').toLowerCase()===token)||((member(x.memberId).name||'').toLowerCase().startsWith(token))));if(!l){let m=db.members.find(x=>(x.name||'').toLowerCase().includes(token)||(x.memberNo||'').toLowerCase()===token);if(m)l=db.loans.find(x=>x.memberId===m.id&&balance(x)>0);}if(l){repayLoan.value=l.id;repayPayer.value=member(l.memberId).name;showRepaymentBalance();}else{repayLoan.value='';repayBalancePreview.value='No outstanding loan found';repayRef.value='';}}
+function showRepaymentBalance(){let l=db.loans.find(x=>x.id===repayLoan.value);repayBalancePreview.value=l?money(balance(l)):'No outstanding loan';if(l){repayMemberSearch.value=member(l.memberId).name+' — '+member(l.memberId).memberNo;repayPayer.value=member(l.memberId).name;repayRef.value=previewReceiptNo();}}
+function previewReceiptNo(){return 'COF-RCP-'+today().replaceAll('-','')+'-'+String(num(db.settings.receiptSequence)+1).padStart(5,'0');}
+
+function resetLoan(){loanForm.reset();loanEdit.value='';loanRate.value=db.settings.interest;loanTerm.value=db.settings.term;loanDate.value=today();loanFormTitle.textContent='Issue loan';}
+loanForm.onsubmit=e=>{e.preventDefault();let edit=loanEdit.value,mid=loanMember.value;if(!mid)return alert('Select a member.');if(db.loans.some(l=>l.memberId===mid&&balance(l)>0&&l.id!==edit))return alert('This member already has an outstanding loan.');let principal=num(loanPrincipal.value),rate=num(loanRate.value),date=loanDate.value,term=num(loanTerm.value);if(principal<=0||term<=0)return alert('Enter a valid principal and term.');let old=db.loans.find(l=>l.id===edit),x={id:edit||id('LOAN'),loanNo:old?.loanNo||nextLoanNo(mid),memberId:mid,principal,rate,date,term,dueDate:datePlus(date,term),frequency:loanFrequency.value};if(edit)db.loans=db.loans.map(l=>l.id===edit?x:l);else db.loans.push(x);save();resetLoan();};
+function renderLoans(){let q=(loanSearch?.value||'').toLowerCase(),f=loanFilter?.value||'',arr=db.loans.filter(l=>(l.loanNo+' '+member(l.memberId).name).toLowerCase().includes(q)&&(!f||loanStatus(l)===f));loansBody.innerHTML=arr.length?arr.map((l,i)=>`<tr><td>${i+1}</td><td>${esc(l.loanNo)}</td><td>${esc(member(l.memberId).name)}</td><td>${money(l.principal)}</td><td>${money(loanTotal(l)-l.principal)}</td><td>${money(loanTotal(l))}</td><td>${money(loanPaid(l))}</td><td><b>${money(balance(l))}</b></td><td>${l.date}</td><td>${l.dueDate}</td><td><span class="status ${loanStatus(l)}">${loanStatus(l)}</span></td><td class="actions"><button class="small secondary" onclick="loanHistory('${l.id}')">History</button></td></tr>`).join(''):'<tr><td colspan="12" class="empty">No loans found.</td></tr>';}
+function deleteLoan(i){return alert('Loan records are retained to protect loan history and prevent loan ID reuse.');}
+function loanHistory(i){let l=db.loans.find(x=>x.id===i);let rows=db.repayments.filter(r=>r.loanId===i);alert('Loan '+l.loanNo+'\\nMember: '+member(l.memberId).name+'\\nTotal due: '+money(loanTotal(l))+'\\nPaid: '+money(loanPaid(l))+'\\nBalance: '+money(balance(l))+'\\n\\n'+(rows.map(r=>r.date+'  '+money(r.amount)+'  '+(r.ref||'')).join('\\n')||'No repayments yet'));}
+function renderLoanPortal(){let q=(document.getElementById('loanPortalQuery')?.value||'').trim().toLowerCase(),f=document.getElementById('loanPortalStatus')?.value||'',out=document.getElementById('loanPortalResults');if(!out)return;if(!q){out.innerHTML='<div class="empty">Enter a name, member ID, phone number or loan ID to search.</div>';return;}let rows=db.loans.filter(l=>{let m=member(l.memberId),hay=[l.loanNo,m.name,m.memberNo,m.phone].join(' ').toLowerCase();return hay.includes(q)&&(!f||loanStatus(l)===f);});out.innerHTML=rows.length?rows.map(l=>{let m=member(l.memberId),hist=db.repayments.filter(r=>r.loanId===l.id).sort((a,b)=>b.date.localeCompare(a.date));return `<div class="panel" style="margin:10px 0"><div class="toolbar"><h3>${esc(m.name)} · ${esc(l.loanNo)}</h3><span class="status ${loanStatus(l)}">${loanStatus(l)}</span></div><div class="cards"><div class="card">Principal<div class="metric">${money(l.principal)}</div></div><div class="card">Total due<div class="metric">${money(loanTotal(l))}</div></div><div class="card">Paid<div class="metric">${money(loanPaid(l))}</div></div><div class="card">Outstanding<div class="metric">${money(balance(l))}</div></div></div><p><b>Member ID:</b> ${esc(m.memberNo)} · <b>Phone:</b> ${esc(m.phone)} · <b>Issue date:</b> ${esc(l.date)} · <b>Due date:</b> ${esc(l.dueDate)} · <b>Closed:</b> ${esc(l.closedAt||'Not yet')}</p><h3>Repayment history</h3>${hist.length?`<div class="tablewrap"><table><thead><tr><th>Date</th><th>Receipt</th><th>Amount</th><th>Balance after</th><th>Action</th></tr></thead><tbody>${hist.map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.receiptNo||r.ref||'')}</td><td>${money(r.amount)}</td><td>${money(r.balanceAfter??0)}</td><td><button class="small secondary" onclick="printReceipt('${r.id}')">Print receipt</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">No repayments recorded.</p>'}<div class="toolbar"><button class="secondary" onclick="showPage('repayments');repayMemberSearch.value='${esc(m.name)} — ${esc(m.memberNo)}';selectRepaymentMember()">Record repayment</button></div></div>`}).join(''):'<div class="empty">No matching loan records found.</div>';}
+guarantorForm.onsubmit=e=>{e.preventDefault();if(!guarantorMember.value)return alert('Select the member linked to this guarantor.');db.guarantors.push({id:id('GUA'),memberId:guarantorMember.value,name:guarantorName.value.trim(),phone:guarantorPhone.value.trim(),relation:guarantorRelation.value.trim(),address:guarantorAddress.value.trim(),nin:guarantorNin.value.trim(),date:today()});save();guarantorForm.reset();};
+function renderGuarantors(){if(!guarantorsBody)return;let q=(guarantorSearch?.value||'').toLowerCase(),a=(db.guarantors||[]).filter(g=>(g.name+' '+g.phone+' '+member(g.memberId).name+' '+member(g.memberId).memberNo).toLowerCase().includes(q));guarantorsBody.innerHTML=a.length?a.map((g,i)=>`<tr><td>${i+1}</td><td>${esc(member(g.memberId).name)} (${esc(member(g.memberId).memberNo)})</td><td>${esc(g.name)}</td><td>${esc(g.phone)}</td><td>${esc(g.relation)}</td><td>${esc(g.address)}</td><td>${esc(g.nin)}</td><td><button class="small danger" onclick="deleteGuarantor('${g.id}')">Delete</button></td></tr>`).join(''):'<tr><td colspan="8" class="empty">No guarantors registered.</td></tr>';}
+function deleteGuarantor(gid){if(confirm('Delete this guarantor record?')){db.guarantors=db.guarantors.filter(g=>g.id!==gid);save();}}
+repayForm.onsubmit=e=>{e.preventDefault();let l=db.loans.find(x=>x.id===repayLoan.value),amt=num(repayAmount.value);if(!l||amt<=0)return alert('Select a member with an outstanding loan and enter an amount.');let before=balance(l);if(before<=0)return alert('This loan is already cleared.');if(amt>before)return alert('Payment is greater than the outstanding balance.');let receiptNo=nextReceiptNo(),payment={id:id('PAY'),loanId:l.id,amount:amt,date:repayDate.value,payer:member(l.memberId).name,ref:receiptNo,notes:repayNotes.value,receiptNo,balanceBefore:before,balanceAfter:Math.max(0,before-amt)};db.repayments.push(payment);if(payment.balanceAfter===0){l.closedAt=repayDate.value;l.closed=true;l.status='Cleared';}save();repayForm.reset();repayDate.value=today();repayBalancePreview.value='';repayRef.value='';printReceipt(payment.id);};
+function renderRepayments(){let q=(repaySearch?.value||'').toLowerCase(),d=repayFilterDate?.value||'',arr=db.repayments.filter(r=>{let l=db.loans.find(x=>x.id===r.loanId);return (!d||r.date===d)&&((r.payer+' '+r.ref+' '+(l?.loanNo||'')+' '+(member(l?.memberId).name||'')).toLowerCase().includes(q));}).sort((a,b)=>b.date.localeCompare(a.date));let groups={};arr.forEach(r=>(groups[r.date]??=[]).push(r));repaymentsGroups.innerHTML=Object.keys(groups).length?Object.keys(groups).sort().reverse().map(date=>`<div class="panel" style="margin:12px 0"><h3>${date} — Daily total: ${money(groups[date].reduce((s,r)=>s+num(r.amount),0))}</h3><div class="tablewrap"><table><thead><tr><th>Payer</th><th>Loan ID</th><th>Amount</th><th>Balance after payment</th><th>Receipt No.</th><th>Receipt</th></tr></thead><tbody>${groups[date].map(r=>{let l=db.loans.find(x=>x.id===r.loanId);return `<tr><td>${esc(r.payer)}</td><td>${esc(l?.loanNo||'')}</td><td>${money(r.amount)}</td><td>${money(r.balanceAfter??(l?balance(l):0))}</td><td>${esc(r.receiptNo||r.ref||'—')}</td><td><button class="small secondary" onclick="printReceipt('${r.id}')">Print receipt</button></td></tr>`}).join('')}</tbody></table></div></div>`).join(''):'<div class="empty">No repayment records match.</div>';}
+
+function receiptDocument(r,preview=false){
+  let l=db.loans.find(x=>x.id===r.loanId),m=member(l?.memberId);
+  let after=Number(r.balanceAfter??(l?balance(l):0));
+  let before=Number(r.balanceBefore??(num(r.amount)+after));
+  let receiptNo=r.receiptNo||r.ref||r.id;
+  return `<!DOCTYPE html><html><head><title>Official Payment Receipt ${esc(receiptNo)}</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    *{box-sizing:border-box}
+    html,body{width:58mm;margin:0;padding:0;background:#fff;color:#171717;font-family:Arial,Helvetica,sans-serif}
+    body{padding:2.2mm}
+    .receipt{width:100%;margin:0 auto;border:1px solid #d5d5d5;padding:3mm 2.5mm 4mm;overflow-wrap:anywhere}
+    .brand{text-align:center;padding-bottom:3mm}
+    .brand h1{font-size:19px;line-height:1.1;margin:0 0 1.5mm;font-weight:700;letter-spacing:.2px}
+    .brand .sub{font-size:14px;margin-bottom:3.5mm}
+    .brand .kind{font-size:11px}
+    .dash{border-top:1px dashed #333;margin:0 0 2mm}
+    .row{display:flex;justify-content:space-between;align-items:flex-start;gap:2mm;padding:1.1mm 0;font-size:11.5px;line-height:1.25}
+    .row>span:first-child{flex:1 1 43%;min-width:0}
+    .row .value{text-align:right;font-weight:700;flex:0 1 57%;min-width:0;overflow-wrap:anywhere}
+    .amount{text-align:center;padding:2mm 0 3mm}
+    .amount .label{font-size:11px;margin-bottom:3mm}
+    .amount .value{font-size:19px;font-weight:700;overflow-wrap:anywhere}
+    .balance{padding-top:1mm}
+    .thanks{text-align:center;margin-top:4mm;font-size:11px;line-height:1.45}
+    .thanks strong{display:block;font-size:12px;margin-bottom:3mm}
+    .signature{margin-top:8mm;font-size:11px}
+    .signature .line{width:62%;border-top:1px solid #222;margin-bottom:1.5mm}
+    .system{text-align:center;margin-top:5mm;font-size:10.5px}
+    .actions{text-align:center;margin-top:5mm}
+    button{padding:8px 14px;border:0;border-radius:5px;background:#176b43;color:#fff;font-size:14px}
+    @media print{
+      @page{size:58mm auto;margin:0}
+      html,body{width:58mm!important;margin:0!important;padding:0!important}
+      .receipt{width:100%;border:0;padding:2.5mm 2.5mm 3mm}
+      .actions{display:none!important}
+      *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    }
+  </style></head><body>
+  <div class="receipt">
+    <div class="brand"><h1>COFISEE</h1><div class="sub">MICROFINANCE</div><div class="kind">OFFICIAL PAYMENT RECEIPT</div></div>
+    <div class="dash"></div>
+    <div class="row"><span>Receipt No.</span><span class="value">${esc(receiptNo)}</span></div>
+    <div class="row"><span>Date</span><span class="value">${esc(r.date||'')}</span></div>
+    <div class="row"><span>Member</span><span class="value">${esc(m.name||r.payer||'')}</span></div>
+    <div class="row"><span>Member ID</span><span class="value">${esc(m.memberNo||'')}</span></div>
+    <div class="row"><span>Phone</span><span class="value">${esc(m.phone||'')}</span></div>
+    <div class="row"><span>Loan ID</span><span class="value">${esc(l?.loanNo||'')}</span></div>
+    <div class="dash" style="margin-top:2mm"></div>
+    <div class="amount"><div class="label">AMOUNT RECEIVED</div><div class="value">${money(r.amount)}</div></div>
+    <div class="dash"></div>
+    <div class="row balance"><span>Balance before<br>payment</span><span class="value">${money(before)}</span></div>
+    <div class="row"><span>Balance after<br>payment</span><span class="value">${money(after)}</span></div>
+    <div class="dash" style="margin-top:2mm"></div>
+    <div class="thanks"><strong>Thank you for choosing COFISEE.</strong>
+      Keep this receipt for your records.<br>
+      For enquiries, contact COFISEE Microfinance.
+    </div>
+    <div class="signature"><div class="line"></div>Authorized signature</div>
+    <div class="system">System-generated receipt</div>
+    <div class="actions"><button onclick="window.print()">Print receipt</button></div>
+  </div>
+  <script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script>
+  </body></html>`;
+}
+function printReceipt(paymentId){
+  let r=db.repayments.find(x=>x.id===paymentId);
+  if(!r)return alert('Repayment receipt not found.');
+  let w=window.open('','_blank','width=360,height=700');
+  if(!w)return alert('Allow pop-ups for this file to print receipts.');
+  w.document.open();w.document.write(receiptDocument(r));w.document.close();
+}
+function printTestReceipt(){
+  const sample={id:'TEST',loanId:'',amount:300000,date:today(),payer:'COFISEE TEST MEMBER',receiptNo:'COF-RCP-TEST',balanceBefore:300000,balanceAfter:0};
+  const original=window.open('','_blank','width=360,height=700');
+  if(!original)return alert('Allow pop-ups to print the test receipt.');
+  original.document.open();original.document.write(receiptDocument(sample));original.document.close();
+}
+function deleteRepayment(i){return alert('Repayment receipts are retained for audit history. Do not delete a recorded payment.');}
+savingForm.onsubmit=e=>{e.preventDefault();let amt=num(savingAmount.value),mid=savingMember.value,type=savingType.value,cur=db.savings.filter(s=>s.memberId===mid).reduce((a,s)=>a+(s.type==='Deposit'?num(s.amount):-num(s.amount)),0);if(type==='Withdrawal'&&amt>cur)return alert('Withdrawal exceeds this member’s savings balance.');db.savings.push({id:id('SAV'),memberId:mid,type,amount:amt,date:savingDate.value,channel:savingChannel.value,ref:savingRef.value});save();savingForm.reset();savingDate.value=today();};
+function renderSavings(){let s=savingsTotals();savingDeposits.textContent=money(s.d);savingWithdrawals.textContent=money(s.w);savingNet.textContent=money(s.net);savingsBody.innerHTML=db.savings.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<tr><td>${x.date}</td><td>${esc(member(x.memberId).name)}</td><td>${x.type}</td><td>${money(x.amount)}</td><td>${esc(x.channel)}</td><td>${esc(x.ref)}</td><td><button class="small danger" onclick="deleteSaving('${x.id}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty">No savings transactions.</td></tr>';}
+function deleteSaving(i){if(confirm('Delete this savings transaction?')){db.savings=db.savings.filter(x=>x.id!==i);save();}}
+cashForm.onsubmit=e=>{e.preventDefault();db.cashbook.push({id:id('CASH'),type:cashType.value,category:cashCategory.value,amount:num(cashAmount.value),date:cashDate.value,description:cashDescription.value,reference:cashReference.value});save();cashForm.reset();cashDate.value=today();};
+function renderCashbook(){let t=cashTotals();cashIn.textContent=money(t.ins);cashOut.textContent=money(t.outs);cashBalance.textContent=money(t.balance);let run=0;let rows=db.cashbook.slice().sort((a,b)=>a.date.localeCompare(b.date));cashBody.innerHTML=rows.map(x=>{if(x.type==='Cash In')run+=num(x.amount);else run-=num(x.amount);return `<tr><td>${x.date}</td><td>${x.type}</td><td>${esc(x.category)}</td><td>${esc(x.description)}</td><td>${x.type==='Cash In'?money(x.amount):'—'}</td><td>${x.type==='Cash Out'?money(x.amount):'—'}</td><td>${money(run)}</td><td><button class="small danger" onclick="deleteCash('${x.id}')">Delete</button></td></tr>`}).join('')||'<tr><td colspan="8" class="empty">No cashbook entries.</td></tr>';}
+function deleteCash(i){if(confirm('Delete this cashbook entry?')){db.cashbook=db.cashbook.filter(x=>x.id!==i);save();}}
+
+function goBack(){
+  if(pageHistory.length>1){pageHistory.pop();let previous=pageHistory[pageHistory.length-1]||'home';showPage(previous,true);}
+  else showPage('home',true);
+}
+function renderExpenses(){
+  if(!document.getElementById('expensesBody'))return;
+  let all=db.expenses||[],month=today().slice(0,7);
+  document.getElementById('expenseTotal').textContent=money(all.reduce((a,x)=>a+num(x.amount),0));
+  document.getElementById('expenseMonthTotal').textContent=money(all.filter(x=>(x.date||'').slice(0,7)===month).reduce((a,x)=>a+num(x.amount),0));
+  document.getElementById('expensesBody').innerHTML=all.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.category)}</td><td>${esc(x.payee)}</td><td>${esc(x.description)}</td><td>${esc(x.reference)}</td><td>${money(x.amount)}</td><td><button class="small danger" onclick="deleteExpense('${x.id}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty">No expenses recorded.</td></tr>';
+}
+expenseForm.onsubmit=e=>{
+  e.preventDefault();
+  let amount=num(expenseAmount.value);if(amount<=0)return alert('Enter a valid expense amount.');
+  let expenseId=id('EXP'),date=expenseDate.value,ref=expenseReference.value.trim()||('EXP-'+Date.now());
+  db.expenses=db.expenses||[];
+  db.expenses.push({id:expenseId,category:expenseCategory.value,amount,date,payee:expensePayee.value.trim(),description:expenseDescription.value.trim(),reference:ref});
+  db.cashbook.push({id:id('CASH'),type:'Cash Out',category:'Expense - '+expenseCategory.value,amount,date,description:(expensePayee.value.trim()?expensePayee.value.trim()+' · ':'')+expenseDescription.value.trim(),reference:ref,expenseId});
+  save();expenseForm.reset();expenseDate.value=today();alert('Expense saved and cashbook updated.');
+};
+function deleteExpense(i){
+  let x=(db.expenses||[]).find(e=>e.id===i);if(!x)return;
+  if(!confirm('Delete this expense and its linked cashbook entry?'))return;
+  db.expenses=db.expenses.filter(e=>e.id!==i);
+  db.cashbook=db.cashbook.filter(c=>c.expenseId!==i);
+  save();
+}
+function amortizationLoans(){
+  let q=(document.getElementById('amortQuery')?.value||'').trim().toLowerCase();
+  return db.loans.filter(l=>balance(l)>0).filter(l=>{
+    let m=member(l.memberId),hay=[m.name,m.memberNo,m.phone,l.loanNo].join(' ').toLowerCase();
+    return !q||hay.includes(q);
+  });
+}
+function renderAmortization(){
+  let select=document.getElementById('amortLoan'),out=document.getElementById('amortOutput');
+  if(!select||!out)return;
+  let rows=amortizationLoans(),previous=select.value;
+  select.innerHTML='<option value="">Select an outstanding loan</option>'+rows.map(l=>`<option value="${esc(l.id)}">${esc(member(l.memberId).name)} — ${esc(l.loanNo)} — ${money(balance(l))}</option>`).join('');
+  if(rows.some(l=>l.id===previous))select.value=previous;
+  let l=rows.find(x=>x.id===select.value);
+  if(!l){out.innerHTML=rows.length?'<div class="empty">Choose the client loan to display its weekly schedule.</div>':'<div class="empty">No outstanding loan matches this search.</div>';return;}
+  let paidRows=db.repayments.filter(r=>r.loanId===l.id).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  let paid=paidRows.reduce((a,r)=>a+num(r.amount),0),total=loanTotal(l),weeks=Math.max(1,Math.ceil(num(l.term||28)/7)),base=Math.floor(total/weeks),remainder=Math.round(total-base*weeks),cumPaid=0;
+  let schedule=Array.from({length:weeks},(_,i)=>{
+    let due=base+(i<remainder?1:0),dueDate=datePlus(l.date,(i+1)*7),startPaid=cumPaid;
+    let installmentPaid=Math.min(due,Math.max(0,paid-startPaid));cumPaid+=due;
+    let status=installmentPaid>=due?'Paid':installmentPaid>0?'Part paid':today()>dueDate?'Overdue':'Upcoming';
+    return {week:i+1,dueDate,due,paid:installmentPaid,balance:Math.max(0,due-installmentPaid),status};
+  });
+  let remaining=Math.max(0,total-paid),m=member(l.memberId);
+  out.innerHTML=`<div class="cards"><div class="card">Client<div class="metric">${esc(m.name)}</div><div class="muted">${esc(m.memberNo||'')}</div></div><div class="card">Loan ID<div class="metric">${esc(l.loanNo)}</div></div><div class="card">Total to repay<div class="metric">${money(total)}</div></div><div class="card">Paid / balance<div class="metric">${money(paid)} / ${money(remaining)}</div></div><div class="card">Weekly installment<div class="metric">${money(base+(remainder?1:0))}</div><div class="muted">${weeks} weekly installments</div></div></div>
+  <div class="toolbar"><button onclick="printAmortization('${l.id}')">Print schedule / Save PDF</button></div>
+  <div class="tablewrap"><table><thead><tr><th>Week</th><th>Payment due date</th><th>Scheduled amount</th><th>Paid towards installment</th><th>Installment balance</th><th>Status</th></tr></thead><tbody>${schedule.map(x=>`<tr><td>${x.week}</td><td>${x.dueDate}</td><td>${money(x.due)}</td><td>${money(x.paid)}</td><td>${money(x.balance)}</td><td><span class="status ${x.status==='Paid'?'Cleared':x.status==='Overdue'?'Default':'Active'}">${x.status}</span></td></tr>`).join('')}</tbody></table></div>
+  <p class="muted">Schedule assumes equal weekly installments of principal plus the loan's flat interest, beginning seven days after issue. Actual payment allocation is applied in date order; if a payment is late or partial, the schedule shows the remaining installment balance. The final installment is adjusted for rounding.</p>`;
+}
+function printAmortization(loanId){
+  let l=db.loans.find(x=>x.id===loanId);if(!l)return;
+  let htmlToPrint=document.getElementById('amortOutput').innerHTML,w=window.open('','_blank');
+  if(!w)return alert('Allow pop-ups to print the amortization schedule.');
+  w.document.write('<html><head><title>COFISEE Weekly Amortization</title><style>body{font:13px Arial;padding:20px;color:#17251d}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ccc;padding:8px;text-align:left}.cards{display:flex;flex-wrap:wrap;gap:12px}.card{border:1px solid #ddd;padding:10px}button,.toolbar{display:none}</style></head><body><h2>COFISEE MICROFINANCE — WEEKLY AMORTIZATION SCHEDULE</h2>'+htmlToPrint+'</body></html>');
+  w.document.close();w.focus();setTimeout(()=>w.print(),300);
+}
+function generateReport(){
+ const month=reportMonth.value;if(!month)return alert('Select a reporting month.');
+ const monthEnd=new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).toISOString().slice(0,10);
+ const loansMonth=db.loans.filter(l=>(l.date||'') .slice(0,7)===month);
+ const loansToDate=db.loans.filter(l=>(l.date||'')<=monthEnd);
+ const pays=db.repayments.filter(r=>(r.date||'').slice(0,7)===month);
+ const savs=db.savings.filter(x=>(x.date||'').slice(0,7)===month);
+ const cashMonth=db.cashbook.filter(x=>(x.date||'').slice(0,7)===month);
+ const exp=(db.expenses||[]).filter(x=>(x.date||'').slice(0,7)===month);
+ const sum=(a,fn)=>a.reduce((v,x)=>v+fn(x),0);
+ const issued=sum(loansMonth,l=>num(l.principal));
+ const repayments=sum(pays,r=>num(r.amount));
+ const expTotal=sum(exp,x=>num(x.amount));
+ const cashIn=sum(cashMonth,x=>x.type==='Cash In'?num(x.amount):0);
+ const cashOut=sum(cashMonth,x=>x.type==='Cash Out'?num(x.amount):0);
+ const cashPosition=num(cashTotals().balance);
+ const savingBalance=num(savingsTotals().net);
+ const membersAtDate=db.members.filter(m=>(m.date||'')<=monthEnd);
+ const newMembers=membersAtDate.filter(m=>(m.date||'').slice(0,7)===month).length;
+ const activeBorrowers=new Set(loansToDate.filter(l=>balance(l)>0).map(l=>l.memberId)).size;
+ const interestDue=sum(loansMonth,l=>Math.max(0,loanTotal(l)-num(l.principal)));
+ const interestEarned=sum(pays,r=>{const l=db.loans.find(z=>z.id===r.loanId);if(!l)return 0;const total=Math.max(1,loanTotal(l));const interest=Math.max(0,total-num(l.principal));return num(r.amount)*interest/total;});
+ const installmentAmount=sum(loansMonth,l=>loanTotal(l)/Math.max(1,Math.ceil(num(l.term||28)/7)));
+ const netIncome=interestEarned-expTotal;
+ const interestBalancePct=interestDue?Math.round(interestEarned/interestDue*100):0;
+ const loanBalance=sum(loansToDate,l=>balance(l));
+ const activeLoans=loansToDate.filter(l=>loanStatus(l)==='Active').length;
+ const defaultLoans=loansToDate.filter(l=>loanStatus(l)==='Default').length;
+ const clearedLoans=loansToDate.filter(l=>loanStatus(l)==='Cleared').length;
+ const totalLoans=loansToDate.length;
+ const categories=[
+  ['Rent (House Rent, Office Rent)',x=>/rent/i.test(x.category||'')],
+  ['Daily Allowances',x=>/allowance|daily/i.test(x.category||'')],
+  ['Social Bundles',x=>/social|bundle/i.test(x.category||'')],
+  ['Stationary',x=>/station|stationery/i.test(x.category||'')],
+  ['Bank Payments (Equity, Centenary, Stanbic, POST Bank)',x=>/bank|equity|centenary|stanbic|post bank/i.test(x.category||'')],
+  ['Electricity (Office Electricity, House Electricity)',x=>/electric|utility/i.test(x.category||'')],
+  ['Allan',x=>/allan/i.test((x.category||'')+' '+(x.payee||''))],
+  ['Others (Home Issues)',x=>/other|home/i.test(x.category||'')]
+ ];
+ const expRows=categories.map(([label,test])=>({label,value:sum(exp.filter(test),x=>num(x.amount))}));
+ const categorized= sum(expRows,x=>x.value);
+ const otherUnclassified=Math.max(0,expTotal-categorized);
+ if(otherUnclassified)expRows.push({label:'Other / Unclassified',value:otherUnclassified});
+ const fmt=n=>money(Math.round(num(n)));
+ const reportDate=today();
+ reportOutput.innerHTML=`<style>
+ .cof-report{background:#fff;color:#171717;padding:18px;font-family:Arial,sans-serif;max-width:100%;}
+ .cof-report-head{background:#008000;color:#fff;text-align:center;padding:12px 8px;margin-bottom:18px}.cof-report-head h2{margin:0;font-size:23px}.cof-report-head div{font-size:18px;font-weight:700;margin-top:3px}
+ .cof-report-meta{display:grid;grid-template-columns:145px 1fr;gap:7px 10px;max-width:500px;margin:12px 8px 22px}.cof-report-meta b{font-size:14px}.cof-report-meta span{border-bottom:1px solid #777;min-height:20px;padding:0 5px}
+ .cof-report h3{font-size:19px;margin:20px 0 12px}.cof-report table{width:100%;border-collapse:collapse;font-size:13px}.cof-report th{background:#008000;color:white;text-align:left;padding:8px}.cof-report td{padding:7px 8px;border-bottom:1px solid #ddd}.cof-report .perf-grid{display:block}.cof-report .chart-title,.cof-report .cof-bar-row,.cof-report .cof-bar-track{display:none}.cof-report .portfolio-row{display:flex;justify-content:space-between;max-width:500px;padding:5px 2px;border-bottom:1px solid #ddd}.cof-report .board-line{min-height:42px;border-bottom:1px dotted #777;margin-bottom:12px;padding:8px}.cof-report .expense-grid{display:block}.cof-report .expense-grid>div{display:none}.cof-report .piebar{display:none}.cof-report .footer{font-family:Georgia,serif;font-style:italic;text-align:center;font-weight:bold;margin:24px 0 8px}
+ @media(max-width:650px){.cof-report .perf-grid,.cof-report .expense-grid{grid-template-columns:1fr}.cof-report{padding:8px}.cof-report .cof-bar-row{grid-template-columns:95px 1fr auto}}
+ @media print{.cof-report{padding:0}.cof-report .perf-grid,.cof-report .expense-grid{grid-template-columns:1fr 1fr}.cof-report h3{break-after:avoid}.cof-report table,.cof-report .portfolio-row{break-inside:avoid}}
+ </style>
+ <div class="cof-report">
+ <div class="cof-report-head"><h2>COFISEE MICROFINANCE</h2><div>Monthly Performance Report</div></div>
+ <div class="cof-report-meta"><b>Reporting Month:</b><span>${esc(new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1,1).toLocaleDateString('en-GB',{month:'short',year:'numeric'}))}</span><b>Branch:</b><span>${esc(db.settings.branch||'Namulanda')}</span><b>Prepared by:</b><span>${esc(preparedBy.value||'')}</span><b>Date Prepared:</b><span>${esc(reportDate)}</span></div>
+ <h3>1. Monthly Performance Table</h3>
+ <div class="perf-grid"><table><thead><tr><th>Item</th><th>Performance</th></tr></thead><tbody>
+ <tr><td>Total Members</td><td>${membersAtDate.length} Members</td></tr><tr><td>Cash Position</td><td>${fmt(cashPosition)}</td></tr><tr><td>Saving Account</td><td>${fmt(savingBalance)}</td></tr><tr><td>New Members</td><td>${newMembers} Members</td></tr><tr><td>Active Members</td><td>${activeBorrowers} Members</td></tr><tr><td>Loans Issued (UGX)</td><td>${fmt(issued)}</td></tr><tr><td>Loan Repayments (UGX)</td><td>${fmt(repayments)}</td></tr><tr><td>Interest Earned (UGX)</td><td>${fmt(interestEarned)}</td></tr><tr><td>Installment Amount</td><td>${fmt(installmentAmount)}</td></tr><tr><td>Expenses (UGX)</td><td>${fmt(expTotal)}</td></tr><tr><td>Net Income</td><td>${fmt(netIncome)}</td></tr><tr><td>Interest Balance (%)</td><td>${interestBalancePct}%</td></tr><tr><td>Loan Balance</td><td>${fmt(loanBalance)}</td></tr>
+ </tbody></table></div>
+ <h3>2. Loan Portfolio</h3><div class="portfolio-row"><span>Total Loans Issued</span><b>${totalLoans} Loans</b></div><div class="portfolio-row"><span>Loans Active</span><b>${activeLoans} Loans</b></div><div class="portfolio-row"><span style="color:#d93025">Loans Defaulted</span><b style="color:#d93025">${defaultLoans} Loans</b></div><div class="portfolio-row"><span style="color:#28a745">Loans Cleared</span><b style="color:#28a745">${clearedLoans} Loans</b></div>
+ <h3>3. Expense Analysis</h3><div class="expense-grid"><table><tbody>${expRows.map(x=>`<tr><td>${esc(x.label)}</td><td style="text-align:right">${x.value?fmt(x.value):'—'}</td></tr>`).join('')}<tr><th>Total Expenses</th><th style="text-align:right">${fmt(expTotal)}</th></tr></tbody></table></div>
+ <h3>4. Board Comments</h3><b>Performance Summary:</b><div class="board-line">${esc(reportComment.value||'')}</div><b>Challenges Identified:</b><div class="board-line">${esc(document.getElementById('reportChallenges')?.value||'')}</div><b>Recommendations:</b><div class="board-line">${esc(document.getElementById('reportRecommendations')?.value||'')}</div><div style="display:flex;justify-content:space-between;gap:20px;margin-top:24px"><b>Approved<br>${esc(document.getElementById('reportApproved')?.value||'________________')}</b><b>Date:<br>${esc(document.getElementById('reportApprovalDate')?.value||'________________')}</b></div>
+ <div class="footer">COFISEE Microfinance. Enabling the Future</div><div style="text-align:center;font-size:10px;margin-top:8px">Thanks for choosing COFISEE Microfinance, we are committed to your financial growth</div>
+ </div>`;
+}
+function printCurrent(){window.print();}
+function csv(name,rows){let content=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+content],{type:'text/csv;charset=utf-8'}));a.download=name;a.click();URL.revokeObjectURL(a.href);}
+function downloadReportCSV(){let month=reportMonth.value;if(!month)return alert('Select a month first.');csv('COFISEE-report-'+month+'.csv',[['Date','Type','Reference','Amount'],...db.repayments.filter(x=>x.date.startsWith(month)).map(x=>[x.date,'Repayment',x.ref,x.amount]),...db.cashbook.filter(x=>x.date.startsWith(month)).map(x=>[x.date,x.type,x.description,x.amount]),...(db.expenses||[]).filter(x=>x.date.startsWith(month)).map(x=>[x.date,'Expense',x.reference+' '+x.category,x.amount])]);}
+function exportAllCSV(){csv('COFISEE-members.csv',[['Member ID','Name','Phone','Address','NIN','Date'],...db.members.map(m=>[m.memberNo,m.name,m.phone,m.address,m.nin,m.date])]);csv('COFISEE-guarantors.csv',[['Member ID','Member','Guarantor','Phone','Relationship','Address','NIN'],...(db.guarantors||[]).map(g=>[member(g.memberId).memberNo,member(g.memberId).name,g.name,g.phone,g.relation,g.address,g.nin])]);}
+function exportBackup(){let a=document.createElement('a'),blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});a.href=URL.createObjectURL(blob);a.download='COFISEE-backup-'+today()+'.json';a.click();URL.revokeObjectURL(a.href);}
+function exportPortableSystem(){
+  try{
+    const snapshot=JSON.stringify(db).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
+    const start='/*COFISEE_DATA_START*/',end='/*COFISEE_DATA_END*/';
+    const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML.replace(
+      new RegExp(start+'[\\s\\S]*?'+end),
+      start+snapshot+end
+    );
+    if(html=== '<!DOCTYPE html>\n'+document.documentElement.outerHTML)throw Error('Portable data location was not found. Reopen the original COFISEE system file.');
+    downloadBlob(html,'COFISEE-PORTABLE-WITH-RECORDS-'+today()+'.html','text/html;charset=utf-8');
+    alert('Your portable COFISEE file has been created with '+db.members.length+' members, '+db.loans.length+' loans and '+db.repayments.length+' repayments. Send this new HTML file to the other phone.');
+  }catch(err){alert('Could not create portable system: '+err.message);}
+}
+function restoreBackup(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!x.members||!x.loans||!x.repayments)throw Error('Invalid backup');if(confirm('This replaces all records currently stored in this browser. Continue?')){db={...blank(),...x};save();alert('Backup restored.');}}catch(err){alert('Could not restore this backup: '+err.message);}};r.readAsText(f);e.target.value='';}
+
+// Excel 2003 XML Spreadsheet: one workbook containing separate worksheets.
+// This format opens directly in Microsoft Excel and does not require internet or external libraries.
+const excelSheets = [
+  ['Members',['id','memberNo','name','phone','address','nin','date']],
+  ['Loans',['id','loanNo','memberId','principal','rate','date','term','dueDate','frequency','closedAt','closed','status']],
+  ['Repayments',['id','loanId','amount','date','payer','ref','notes','receiptNo','balanceBefore','balanceAfter']],
+  ['Guarantors',['id','memberId','name','phone','relation','address','nin','date']],
+  ['Savings',['id','memberId','type','amount','date','channel','ref']],
+  ['Expenses',['id','category','amount','date','payee','description','reference']],
+  ['Cashbook',['id','type','category','amount','date','description','reference','expenseId']]
+];
+function xmlEscape(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');}
+function exportExcelWorkbook(){
+  const escXml=xmlEscape;
+  let sheets=excelSheets.map(([name,fields])=>{
+    let rows=db[name.toLowerCase()]||[];
+    let header='<Row>'+fields.map(f=>`<Cell><Data ss:Type="String">${escXml(f)}</Data></Cell>`).join('')+'</Row>';
+    let body=rows.map(obj=>'<Row>'+fields.map(f=>{
+      let v=obj[f];
+      if(v===undefined||v===null)return '<Cell><Data ss:Type="String"></Data></Cell>';
+      let type=(typeof v==='number')?'Number':'String';
+      return `<Cell><Data ss:Type="${type}">${escXml(v)}</Data></Cell>`;
+    }).join('')+'</Row>').join('');
+    return `<Worksheet ss:Name="${name}"><Table>${header}${body}</Table></Worksheet>`;
+  }).join('');
+  let settings=[['Settings','Key','Value'],...Object.entries(db.settings||{}).map(([k,v])=>['Settings',k,v])];
+  let settingsSheet=`<Worksheet ss:Name="Settings"><Table><Row><Cell><Data ss:Type="String">Key</Data></Cell><Cell><Data ss:Type="String">Value</Data></Cell></Row>${settings.slice(1).map(r=>`<Row><Cell><Data ss:Type="String">${escXml(r[1])}</Data></Cell><Cell><Data ss:Type="${typeof r[2]==='number'?'Number':'String'}">${escXml(r[2])}</Data></Cell></Row>`).join('')}</Table></Worksheet>`;
+  let xml=`<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40">${sheets}${settingsSheet}</Workbook>`;
+  downloadBlob(xml,'COFISEE-Shared-Records-'+today()+'.xml','application/vnd.ms-excel');
+}
+function downloadBlob(content,name,type){
+  let blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+function mergeIncoming(incoming){
+  const keys={
+    members:['id','memberNo'], loans:['id','loanNo'], repayments:['id','receiptNo','ref'],
+    guarantors:['id'], savings:['id'], expenses:['id','reference'], cashbook:['id']
+  };
+  let added={},skipped={},conflicts=[];
+  Object.keys(keys).forEach(table=>{
+    db[table]=db[table]||[];
+    const source=Array.isArray(incoming[table])?incoming[table]:[];
+    added[table]=0;skipped[table]=0;
+    source.forEach(item=>{
+      if(!item||typeof item!=='object')return;
+      let existing=null,matchedBy='';
+      for(const key of keys[table]){
+        if(item[key]!==undefined&&item[key]!==null&&String(item[key])!==''){
+          existing=db[table].find(x=>String(x[key]??'')===String(item[key]));
+          if(existing){matchedBy=key;break;}
+        }
+      }
+      if(existing){
+        const same=JSON.stringify(existing)===JSON.stringify(item);
+        if(!same)conflicts.push({table,match:matchedBy,value:item[matchedBy],reason:'Same identifier, different data'});
+        skipped[table]++;return;
+      }
+      // Preserve links: imported foreign keys must point to a member/loan that exists after this merge.
+      if(table==='loans'&&!db.members.some(m=>m.id===item.memberId)){conflicts.push({table,value:item.loanNo,reason:'Linked member is missing'});skipped[table]++;return;}
+      if(table==='repayments'&&!db.loans.some(l=>l.id===item.loanId)){conflicts.push({table,value:item.receiptNo||item.id,reason:'Linked loan is missing'});skipped[table]++;return;}
+      if(['guarantors','savings'].includes(table)&&!db.members.some(m=>m.id===item.memberId)){conflicts.push({table,value:item.id,reason:'Linked member is missing'});skipped[table]++;return;}
+      if(table==='cashbook'&&item.expenseId&&!db.expenses.some(e=>e.id===item.expenseId)&&!(incoming.expenses||[]).some(e=>e.id===item.expenseId)){/* standalone cashbook rows are still valid */}
+      db[table].push(item);added[table]++;
+    });
+  });
+  // Carry forward the highest ID sequences so subsequent generated IDs remain safe.
+  if(incoming.settings){
+    db.settings={...db.settings,...incoming.settings};
+    db.settings.memberSequence=Math.max(num(db.settings.memberSequence),num(incoming.settings.memberSequence),...db.members.map(m=>{let z=String(m.memberNo||'').match(/^COF(\\d+)$/i);return z?Number(z[1]):0;}));
+    db.settings.receiptSequence=Math.max(num(db.settings.receiptSequence),num(incoming.settings.receiptSequence));
+  }
+  return {added,skipped,conflicts};
+}
+function showImportSummary(result,sourceName){
+  const box=document.getElementById('importSummary');box.style.display='block';
+  let labels={members:'Members',loans:'Loans',repayments:'Repayments',guarantors:'Guarantors',savings:'Savings',expenses:'Expenses',cashbook:'Cashbook entries'};
+  let rows=Object.keys(labels).map(k=>`<tr><td>${labels[k]}</td><td>${result.added[k]||0}</td><td>${result.skipped[k]||0}</td></tr>`).join('');
+  let conflictHtml=result.conflicts.length?`<h4>Records requiring review (${result.conflicts.length})</h4><div class="tablewrap"><table><thead><tr><th>Sheet</th><th>Record</th><th>Reason</th></tr></thead><tbody>${result.conflicts.slice(0,100).map(c=>`<tr><td>${esc(c.table)}</td><td>${esc(c.value||'—')}</td><td>${esc(c.reason)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="notice">No conflicting records were found.</p>';
+  box.innerHTML=`<h3>Import completed: ${esc(sourceName)}</h3><p>Records were added without replacing existing data.</p><div class="tablewrap"><table><thead><tr><th>Record type</th><th>Added</th><th>Skipped / duplicate</th></tr></thead><tbody>${rows}</tbody></table></div>${conflictHtml}`;
+}
+function normalizeLegacyV13(source){
+  // Version 13 stores records under cofisee_local_v1 and uses a different field layout.
+  const x=source&&source.database&&source.format==='cofisee-backup'?source.database:source;
+  if(!x||!Array.isArray(x.members)||!Array.isArray(x.loans)||!Array.isArray(x.repayments))return x;
+  const members=x.members.map(m=>({
+    ...m,id:String(m.id||m.memberNo||''),memberNo:String(m.memberNo||m.id||''),
+    name:String(m.name||''),phone:String(m.phone||''),address:String(m.address||''),
+    nin:String(m.nin||''),date:String(m.date||''),branch:m.branch||'Namulanda'
+  }));
+  const loans=x.loans.map(l=>({
+    ...l,id:String(l.id||''),loanNo:String(l.loanNo||l.id||''),
+    memberId:String(l.memberId||members.find(m=>m.name===l.name)?.id||''),
+    principal:num(l.principal??l.amount),rate:num(l.rate??20),date:String(l.date||l.issueDate||''),
+    term:num(l.term||28),dueDate:String(l.dueDate||''),frequency:l.frequency||'Weekly',
+    closedAt:l.closedAt||'',closed:!!l.closed,status:l.status||''
+  }));
+  const repayments=x.repayments.map(r=>({
+    ...r,id:String(r.id||('V13PAY-'+Math.random().toString(36).slice(2))),
+    loanId:String(r.loanId||''),amount:num(r.amount),date:String(r.date||''),
+    payer:String(r.payer||r.name||''),ref:String(r.ref||r.id||''),
+    receiptNo:String(r.receiptNo||r.ref||r.id||''),notes:String(r.notes||''),
+    balanceBefore:r.balanceBefore==null?undefined:num(r.balanceBefore),
+    balanceAfter:r.balanceAfter==null?undefined:num(r.balanceAfter)
+  }));
+  // Fill historical balance snapshots without changing payment amounts or dates.
+  const byLoan={};repayments.forEach(r=>(byLoan[r.loanId]??=[]).push(r));
+  Object.keys(byLoan).forEach(lid=>{
+    const loan=loans.find(l=>l.id===lid);if(!loan)return;
+    let remaining=Math.max(0,loan.principal*(1+loan.rate/100));
+    byLoan[lid].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    byLoan[lid].forEach(r=>{if(r.balanceBefore===undefined)r.balanceBefore=remaining;if(r.balanceAfter===undefined){remaining=Math.max(0,remaining-r.amount);r.balanceAfter=remaining;}else remaining=r.balanceAfter;});
+  });
+  const expenses=(x.expenses||[]).map(e=>({...e,id:String(e.id||''),category:String(e.category||''),amount:num(e.amount),date:String(e.date||''),description:String(e.description||''),payee:String(e.payee||''),reference:String(e.reference||'')}));
+  const savings=(x.savings||[]).map(v=>({...v,id:String(v.id||''),memberId:String(v.memberId||members.find(m=>m.name===v.name)?.id||''),type:/withdraw/i.test(v.type||'')?'Withdrawal':'Deposit',amount:num(v.amount),date:String(v.date||''),channel:String(v.channel||v.provider||''),ref:String(v.ref||'')}));
+  const guarantors=(x.guarantors||[]).map(g=>({...g,id:String(g.id||''),memberId:String(g.memberId||loans.find(l=>l.id===g.loanId)?.memberId||''),name:String(g.name||''),phone:String(g.phone||''),relation:String(g.relation||''),address:String(g.address||''),nin:String(g.nin||'')}));
+  const cashbook=(x.cashbook||[]).map(c=>({...c,id:String(c.id||''),type:c.type||'Cash In',category:String(c.category||''),amount:num(c.amount),date:String(c.date||''),description:String(c.description||''),reference:String(c.reference||''),expenseId:String(c.expenseId||'')}));
+  const settings={...(x.settings||{}),memberSequence:num(x.settings?.memberSequence)||Math.max(0,...members.map(m=>Number((m.memberNo||'').replace(/^COF/i,''))||0)),receiptSequence:num(x.settings?.receiptSequence)};
+  return {...x,members,loans,repayments,expenses,savings,guarantors,cashbook,settings,openingCash:num(x.openingCash)};
+}
+function importSharedFile(e){
+  const file=e.target.files?.[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      let incoming;
+      if(file.name.toLowerCase().endsWith('.json')){
+        incoming=normalizeLegacyV13(JSON.parse(reader.result));
+      }else if(/\.html?$/i.test(file.name)){
+        const html=String(reader.result);
+        const match=html.match(/\/\*COFISEE_DATA_START\*\/([\s\S]*?)\/\*COFISEE_DATA_END\*\//);
+        if(match){
+          incoming=JSON.parse(match[1]);
+        }else{
+          // Compatibility with Version 13 portable exports, which embed the
+          // database as window.__COFISEE_TRANSFER_DB__ before the local key.
+          const legacy=html.match(/window\.__COFISEE_TRANSFER_DB__\s*=\s*(\{[\s\S]*?\})\s*;\s*(?:const|let|var)\s+KEY\s*=/);
+          if(legacy){
+            incoming=JSON.parse(legacy[1]);
+          }else if(/cofisee_local_v1/.test(html)){
+            throw Error('This Version 13 HTML is the system program only; it has no records embedded. Open it on the phone that contains your records, choose Data Backup & Transfer → Copy System With All Records, then import the newly downloaded HTML here.');
+          }else{
+            throw Error('This HTML file does not contain an embedded COFISEE records snapshot. Choose a Version 13 file created with Copy System With All Records, or import its JSON/Excel backup.');
+          }
+        }
+      }else{
+        const doc=new DOMParser().parseFromString(reader.result,'application/xml');
+        if(doc.querySelector('parsererror'))throw Error('The Excel XML workbook could not be read. Export it again from COFISEE.');
+        const ns='urn:schemas-microsoft-com:office:spreadsheet';
+        const worksheets=[...doc.getElementsByTagNameNS(ns,'Worksheet')];
+        if(!worksheets.length)throw Error('No COFISEE worksheets were found. Use the workbook exported by COFISEE.');
+        incoming={};
+        const mapping={Members:'members',Loans:'loans',Repayments:'repayments',Guarantors:'guarantors',Savings:'savings',Expenses:'expenses',Cashbook:'cashbook'};
+        worksheets.forEach(ws=>{
+          const name=ws.getAttributeNS(ns,'Name')||ws.getAttribute('ss:Name')||ws.getAttribute('Name');
+          const table=mapping[name];if(!table)return;
+          const rows=[...ws.getElementsByTagNameNS(ns,'Row')].map(row=>[...row.getElementsByTagNameNS(ns,'Cell')].map(cell=>{
+            const d=cell.getElementsByTagNameNS(ns,'Data')[0];return d?d.textContent:'';
+          }));
+          const headers=rows.shift()||[];
+          incoming[table]=rows.filter(r=>r.some(v=>v!=='')).map(row=>{
+            let o={};headers.forEach((h,i)=>{if(h)o[h]=row[i]??'';});
+            ['principal','rate','term','amount','balanceBefore','balanceAfter'].forEach(k=>{if(o[k]!==undefined&&o[k]!=='')o[k]=Number(o[k])||0;});
+            ['closed'].forEach(k=>{if(o[k]!==undefined)o[k]=String(o[k]).toLowerCase()==='true';});
+            return o;
+          });
+        });
+        let sw=worksheets.find(w=>(w.getAttributeNS(ns,'Name')||'')==='Settings');
+        if(sw){
+          let rr=[...sw.getElementsByTagNameNS(ns,'Row')].slice(1);
+          incoming.settings={};
+          rr.forEach(row=>{let cells=[...row.getElementsByTagNameNS(ns,'Data')].map(d=>d.textContent);if(cells[0])incoming.settings[cells[0]]=cells[1]??'';});
+          ['interest','term','penalty','memberSequence','receiptSequence'].forEach(k=>{if(incoming.settings[k]!==undefined)incoming.settings[k]=Number(incoming.settings[k])||0;});
+        }
+      }
+      if(!incoming||!Array.isArray(incoming.members)||!Array.isArray(incoming.loans)||!Array.isArray(incoming.repayments))throw Error('This file is not a valid COFISEE export or JSON backup.');
+      if(!confirm('ADD records from '+file.name+' to this device? Existing records will not be replaced. Continue?'))return;
+      const result=mergeIncoming(incoming);save();showImportSummary(result,file.name);
+      alert('Import finished. Added records have been saved. Review any flagged conflicts below.');
+    }catch(err){alert('Import failed: '+err.message);}
+    finally{e.target.value='';}
+  };
+  reader.readAsText(file);
+}
+
+function saveSettings(){db.settings={branch:branchName.value||'NAMULANDA BRANCH',interest:num(defaultInterest.value),term:num(defaultTerm.value)||28,penalty:num(penaltyRate.value)};save();alert('Settings saved.');}
+function renderSettingsInfo(){branchName.value=db.settings.branch;defaultInterest.value=db.settings.interest;defaultTerm.value=db.settings.term;penaltyRate.value=db.settings.penalty;systemInfo.textContent='Members: '+db.members.length+' · Loans: '+db.loans.length+' · Repayments: '+db.repayments.length+' · Guarantors: '+(db.guarantors||[]).length+' · Savings: '+db.savings.length+' · Cashbook entries: '+db.cashbook.length+' · Storage: this browser/device · Portable records: enabled · Receipt paper: 58mm';}
+function loanHistoryPrint(){printCurrent()}
+function loanSearchDummy(){}
+function downloadAll(){exportBackup()}
+setDefaults();refresh();resetMember();
+</script>
+</body></html>
